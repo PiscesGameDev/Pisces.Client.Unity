@@ -1,6 +1,6 @@
 using UnityEngine.Pool;
 
-namespace T2FGame.Client.Utilities
+namespace T2FGame.Client.Utils
 {
     /// <summary>
     ///  引用对象池

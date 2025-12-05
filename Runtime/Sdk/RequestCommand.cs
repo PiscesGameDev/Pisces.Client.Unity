@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using T2FGame.Client.Utilities;
+using T2FGame.Client.Utils;
 using T2FGame.Protocol;
 using Google.Protobuf;
 

@@ -59,7 +59,7 @@ namespace T2FGame.Client.Network
                     _buffer.AsSpan(readPos, PacketCodec.HeaderSize));
 
                 // 验证长度
-                if (bodyLength < 0 || bodyLength > PacketCodec.MaxBodySize)
+                if (bodyLength is < 0 or > PacketCodec.MaxBodySize)
                 {
                     throw new InvalidOperationException($"Invalid packet length: {bodyLength}");
                 }

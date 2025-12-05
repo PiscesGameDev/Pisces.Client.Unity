@@ -1,9 +1,9 @@
-namespace T2FGame.Client.Network
+namespace T2FGame.Client.Network.Channel
 {
     /// <summary>
     /// 传输协议类型
     /// </summary>
-    public enum TransportType
+    public enum ChannelType
     {
         /// <summary>
         /// TCP 传输协议（默认）

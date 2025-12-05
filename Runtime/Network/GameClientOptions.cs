@@ -1,4 +1,5 @@
 using System;
+using T2FGame.Client.Network.Channel;
 
 namespace T2FGame.Client.Network
 {
@@ -8,7 +9,7 @@ namespace T2FGame.Client.Network
          /// <summary>
         /// 传输协议类型（默认 TCP）
         /// </summary>
-        public TransportType TransportType = TransportType.Tcp;
+        public ChannelType ChannelType = ChannelType.Tcp;
 
         /// <summary>
         /// 服务器地址
@@ -85,5 +86,29 @@ namespace T2FGame.Client.Network
 #else
             true;
 #endif
+        
+        /// <summary>
+        /// 克隆配置
+        /// </summary>
+        public GameClientOptions Clone()
+        {
+            return new GameClientOptions
+            {
+                ChannelType = ChannelType,
+                Host = Host,
+                Port = Port,
+                ConnectTimeoutMs = ConnectTimeoutMs,
+                RequestTimeoutMs = RequestTimeoutMs,
+                HeartbeatIntervalSec = HeartbeatIntervalSec,
+                HeartbeatTimeoutCount = HeartbeatTimeoutCount,
+                AutoReconnect = AutoReconnect,
+                ReconnectIntervalSec = ReconnectIntervalSec,
+                MaxReconnectCount = MaxReconnectCount,
+                ReceiveBufferSize = ReceiveBufferSize,
+                SendBufferSize = SendBufferSize,
+                EnableLog = EnableLog,
+                UseWorkerThread = UseWorkerThread
+            };
+        }
     }
 }
