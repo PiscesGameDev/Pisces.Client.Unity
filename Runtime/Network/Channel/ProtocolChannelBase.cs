@@ -119,7 +119,7 @@ namespace T2FGame.Client.Network.Channel
 
                     var data = ReceiveMessage(Client);
 
-                    if (data != null && data.Length > 0)
+                    if (data is { Length: > 0 })
                     {
                         // 触发接收事件
                         InvokeOnMainThread(() => ReceiveMessageEvent?.Invoke(this, data));
@@ -137,7 +137,7 @@ namespace T2FGame.Client.Network.Channel
                 }
                 catch (Exception ex)
                 {
-                    GameLogger.LogException(ex);
+                    GameLogger.LogError(ex.Message);
                 }
             }
         }
@@ -195,7 +195,7 @@ namespace T2FGame.Client.Network.Channel
                 }
                 catch (Exception ex)
                 {
-                    GameLogger.LogException(ex);
+                    GameLogger.LogError(ex.Message);
                 }
             }
         }
