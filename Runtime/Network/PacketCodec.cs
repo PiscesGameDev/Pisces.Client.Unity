@@ -41,8 +41,6 @@ namespace T2FGame.Client.Network
             return packet;
         }
 
-     
-
         /// <summary>
         /// 解码数据包（从完整的数据包字节）
         /// </summary>

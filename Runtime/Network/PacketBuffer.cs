@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using T2FGame.Client.Protocol;
 using T2FGame.Protocol;
 
-
 namespace T2FGame.Client.Network
 {
     /// <summary>
@@ -36,7 +35,8 @@ namespace T2FGame.Client.Network
         /// </summary>
         public void Write(byte[] data, int offset, int count)
         {
-            if (count <= 0) return;
+            if (count <= 0)
+                return;
 
             EnsureCapacity(count);
             Buffer.BlockCopy(data, offset, _buffer, _writePos, count);
@@ -56,7 +56,8 @@ namespace T2FGame.Client.Network
             {
                 // 读取长度头（大端序）
                 var bodyLength = BinaryPrimitives.ReadInt32BigEndian(
-                    _buffer.AsSpan(readPos, PacketCodec.HeaderSize));
+                    _buffer.AsSpan(readPos, PacketCodec.HeaderSize)
+                );
 
                 // 验证长度
                 if (bodyLength is < 0 or > PacketCodec.MaxBodySize)
@@ -73,7 +74,10 @@ namespace T2FGame.Client.Network
 
                 // 反序列化消息
                 var message = ProtoSerializer.Deserialize<ExternalMessage>(
-                    _buffer, readPos + PacketCodec.HeaderSize, bodyLength);
+                    _buffer,
+                    readPos + PacketCodec.HeaderSize,
+                    bodyLength
+                );
 
                 if (message != null)
                 {
@@ -111,7 +115,8 @@ namespace T2FGame.Client.Network
         private void EnsureCapacity(int additionalSize)
         {
             var required = _writePos + additionalSize;
-            if (required <= _buffer.Length) return;
+            if (required <= _buffer.Length)
+                return;
 
             // 扩容为 2 倍或所需大小
             var newSize = Math.Max(_buffer.Length * 2, required);

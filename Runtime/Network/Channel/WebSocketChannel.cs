@@ -1,6 +1,6 @@
 using System;
-using UnityWebSocket;
 using T2FGame.Client.Utils;
+using UnityWebSocket;
 
 namespace T2FGame.Client.Network.Channel
 {
@@ -80,8 +80,10 @@ namespace T2FGame.Client.Network.Channel
                 // 如果 host 已经是完整的 ws:// 或 wss:// URL，直接使用
                 // 否则构建 URL
                 string wsUrl;
-                if (host.StartsWith("ws://", StringComparison.OrdinalIgnoreCase) ||
-                    host.StartsWith("wss://", StringComparison.OrdinalIgnoreCase))
+                if (
+                    host.StartsWith("ws://", StringComparison.OrdinalIgnoreCase)
+                    || host.StartsWith("wss://", StringComparison.OrdinalIgnoreCase)
+                )
                 {
                     wsUrl = host;
                 }
@@ -109,15 +111,18 @@ namespace T2FGame.Client.Network.Channel
 
         public void Disconnect()
         {
-            if (_socket == null) return;
+            if (_socket == null)
+                return;
 
             try
             {
                 IsConnected = false;
                 _isConnecting = false;
 
-                if (_socket.ReadyState == WebSocketState.Open ||
-                    _socket.ReadyState == WebSocketState.Connecting)
+                if (
+                    _socket.ReadyState == WebSocketState.Open
+                    || _socket.ReadyState == WebSocketState.Connecting
+                )
                 {
                     _socket.CloseAsync();
                 }
@@ -136,7 +141,8 @@ namespace T2FGame.Client.Network.Channel
 
         public void Send(byte[] data)
         {
-            if (data == null || data.Length == 0) return;
+            if (data == null || data.Length == 0)
+                return;
 
             if (!IsConnected || _socket == null)
             {
@@ -160,7 +166,8 @@ namespace T2FGame.Client.Network.Channel
         /// </summary>
         public void SendText(string text)
         {
-            if (string.IsNullOrEmpty(text)) return;
+            if (string.IsNullOrEmpty(text))
+                return;
 
             if (!IsConnected || _socket == null)
             {
@@ -224,7 +231,9 @@ namespace T2FGame.Client.Network.Channel
             {
                 // 当前框架保持仅接受二进制数据
                 // 如果需要处理文本消息，可以转换为字节数组
-                GameLogger.LogWarning($"[WebSocketChannel] Received text message (ignored): {e.Data?.Length ?? 0} chars");
+                GameLogger.LogWarning(
+                    $"[WebSocketChannel] Received text message (ignored): {e.Data?.Length ?? 0} chars"
+                );
             }
         }
 
@@ -233,7 +242,8 @@ namespace T2FGame.Client.Network.Channel
         /// </summary>
         private void CleanupSocket()
         {
-            if (_socket == null) return;
+            if (_socket == null)
+                return;
 
             _socket.OnOpen -= OnOpen;
             _socket.OnClose -= OnClose;
@@ -252,7 +262,8 @@ namespace T2FGame.Client.Network.Channel
         /// </summary>
         public void Dispose()
         {
-            if (_isDisposed) return;
+            if (_isDisposed)
+                return;
 
             _isDisposed = true;
             Disconnect();

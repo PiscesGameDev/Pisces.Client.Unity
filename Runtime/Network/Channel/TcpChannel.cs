@@ -71,7 +71,12 @@ namespace T2FGame.Client.Network.Channel
             }
 
             // 读取可用数据
-            var bytesRead = client.Receive(_receiveBuffer, 0, _receiveBuffer.Length, SocketFlags.None);
+            var bytesRead = client.Receive(
+                _receiveBuffer,
+                0,
+                _receiveBuffer.Length,
+                SocketFlags.None
+            );
 
             if (bytesRead <= 0)
             {

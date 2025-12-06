@@ -28,6 +28,6 @@ namespace T2FGame.Client.Network
         /// <summary>
         /// 已关闭（不再重连）
         /// </summary>
-        Closed
+        Closed,
     }
 }

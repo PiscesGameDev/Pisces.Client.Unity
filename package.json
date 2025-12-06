@@ -2,20 +2,45 @@
   "name": "com.t2fgame.client",
   "version": "1.0.0",
   "displayName": "T2FGame Client SDK",
-  "description": "T2FGame 游戏客户端 SDK，基于 UniTask 的高性能网络通信框架",
-  "unity": "2022.3.14f1",
+  "description": "T2FGame 游戏客户端 SDK - 高性能、跨平台、现代化的 Unity 网络通信框架。基于 UniTask 和 ioGame 协议，提供完整的客户端网络功能，包括 TCP/UDP/WebSocket 多协议支持、心跳保活、自动重连等特性。",
+  "unity": "2022.3",
+  "unityRelease": "0f1",
+  "documentationUrl": "https://github.com/unittt/T2FGame.Client.Unity#readme",
+  "licensesUrl": "https://github.com/unittt/T2FGame.Client.Unity/blob/main/LICENSE",
+  "type": "library",
   "author": {
     "name": "unittt",
+    "email": "unittt@example.com",
     "url": "https://github.com/unittt"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/unittt/T2FGame.Client.Unity.git"
+  },
+  "bugs": {
+    "url": "https://github.com/unittt/T2FGame.Client.Unity/issues"
+  },
+  "homepage": "https://github.com/unittt/T2FGame.Client.Unity#readme",
   "keywords": [
     "game",
     "network",
+    "networking",
+    "client",
     "tcp",
+    "udp",
+    "websocket",
     "protobuf",
-    "unitask"
+    "unitask",
+    "async",
+    "iogame",
+    "multiplayer",
+    "real-time",
+    "cross-platform"
   ],
+  "category": "Network",
   "dependencies": {
-    // 不声明任何依赖
-  }
+    "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+    "com.psygames.unitywebsocket": "https://github.com/psygames/UnityWebSocket.git#upm"
+  },
+  "hideInEditor": false
 }

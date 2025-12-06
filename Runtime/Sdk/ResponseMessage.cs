@@ -6,7 +6,6 @@ using T2FGame.Protocol;
 
 namespace T2FGame.Client.Protocol
 {
-
     /// <summary>
     /// 对 ExternalMessage 的封装，提供安全的访问器与缓存。
     /// </summary>
@@ -44,7 +43,6 @@ namespace T2FGame.Client.Protocol
         /// </summary>
         public bool Success { get; private set; }
 
-        
         public void Initialize(ExternalMessage message)
         {
             _message = message;
@@ -88,7 +86,8 @@ namespace T2FGame.Client.Protocol
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public T GetValue<T>() where T : IMessage, new()
+        public T GetValue<T>()
+            where T : IMessage, new()
         {
             if (_message == null || _message.Data.IsEmpty)
             {

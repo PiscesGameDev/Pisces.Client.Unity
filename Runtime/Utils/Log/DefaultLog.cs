@@ -11,7 +11,7 @@ namespace T2FGame.Client.Utils
 
         public void LogWarning(string message)
         {
-           Debug.LogWarning(message);
+            Debug.LogWarning(message);
         }
 
         public void LogError(string message)

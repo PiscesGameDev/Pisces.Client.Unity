@@ -21,6 +21,6 @@ namespace T2FGame.Client.Network.Channel
         /// WebSocket 传输协议
         /// 可靠、有序、适用于 WebGL 平台或需要穿透防火墙的场景
         /// </summary>
-        WebSocket = 2
+        WebSocket = 2,
     }
 }

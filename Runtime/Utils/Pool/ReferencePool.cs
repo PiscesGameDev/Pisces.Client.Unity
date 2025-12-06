@@ -7,7 +7,8 @@ namespace T2FGame.Client.Utils
     /// 提供高效的对象复用机制，减少 GC 压力
     /// </summary>
     /// <typeparam name="T">池化对象类型</typeparam>
-    public static class ReferencePool<T> where T : class, new()
+    public static class ReferencePool<T>
+        where T : class, new()
     {
         private static readonly ObjectPool<T> _pool;
 
@@ -36,7 +37,8 @@ namespace T2FGame.Client.Utils
         /// <param name="item">要归还的对象</param>
         public static void Despawn(T item)
         {
-            if (item == null) return;
+            if (item == null)
+                return;
             _pool.Release(item);
         }
 

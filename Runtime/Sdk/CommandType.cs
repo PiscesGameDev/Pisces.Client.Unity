@@ -13,6 +13,6 @@ namespace T2FGame.Client.Protocol
         /// <summary>
         /// 业务消息
         /// </summary>
-        Business = 1
+        Business = 1,
     }
 }

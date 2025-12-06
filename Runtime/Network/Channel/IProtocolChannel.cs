@@ -16,12 +16,12 @@ namespace T2FGame.Client.Network.Channel
         /// 是否已连接
         /// </summary>
         bool IsConnected { get; }
-        
+
         /// <summary>
         /// 初始化
         /// </summary>
         void OnInit();
-        
+
         /// <summary>
         /// 连接到服务器
         /// </summary>
@@ -39,15 +39,17 @@ namespace T2FGame.Client.Network.Channel
         /// </summary>
         /// <param name="data">要发送的数据（已编码的完整数据包）</param>
         void Send(byte[] data);
-        
+
         /// <summary>
         /// 发送消息成功事件
         /// </summary>
         public event Action<IProtocolChannel> SendMessageEvent;
+
         /// <summary>
         /// 接收消息成功事件
         /// </summary>
         public event Action<IProtocolChannel, byte[]> ReceiveMessageEvent;
+
         /// <summary>
         /// 与服务器断开连接事件
         /// </summary>

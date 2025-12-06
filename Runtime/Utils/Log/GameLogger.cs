@@ -5,22 +5,21 @@ namespace T2FGame.Client.Utils
     /// </summary>
     public static class GameLogger
     {
-        
         private static ILog _logger = new DefaultLog();
-        
+
         /// <summary>
         /// 是否启用日志
         /// </summary>
         public static bool Enabled { get; set; } = true;
-        
-        public static void SetLog(ILog  logger)
+
+        public static void SetLog(ILog logger)
         {
             if (logger != null)
             {
                 _logger = logger;
             }
         }
-        
+
         /// <summary>
         /// 输出普通日志
         /// </summary>
@@ -31,7 +30,7 @@ namespace T2FGame.Client.Utils
                 _logger.Log(message);
             }
         }
-        
+
         /// <summary>
         /// 输出警告日志
         /// </summary>
@@ -42,7 +41,7 @@ namespace T2FGame.Client.Utils
                 _logger.LogWarning(message);
             }
         }
-        
+
         /// <summary>
         /// 输出错误日志
         /// </summary>

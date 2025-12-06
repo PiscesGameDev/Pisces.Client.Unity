@@ -6,7 +6,7 @@ namespace T2FGame.Client.Network
     [Serializable]
     public sealed class GameClientOptions
     {
-         /// <summary>
+        /// <summary>
         /// 传输协议类型（默认 TCP）
         /// </summary>
         public ChannelType ChannelType = ChannelType.Tcp;
@@ -15,7 +15,7 @@ namespace T2FGame.Client.Network
         /// 服务器地址
         /// 对于 WebSocket，可以使用完整 URL（如 ws://host:port 或 wss://host:port）
         /// </summary>
-        public string Host  = "localhost";
+        public string Host = "localhost";
 
         /// <summary>
         /// 服务器端口
@@ -30,12 +30,12 @@ namespace T2FGame.Client.Network
         /// <summary>
         /// 请求超时（毫秒）
         /// </summary>
-        public int RequestTimeoutMs  = 30000;
+        public int RequestTimeoutMs = 30000;
 
         /// <summary>
         /// 心跳间隔（秒）
         /// </summary>
-        public int HeartbeatIntervalSec  = 30;
+        public int HeartbeatIntervalSec = 30;
 
         /// <summary>
         /// 心跳超时次数（超过此次数认为断开连接）
@@ -50,17 +50,17 @@ namespace T2FGame.Client.Network
         /// <summary>
         /// 重连间隔（秒）
         /// </summary>
-        public int ReconnectIntervalSec  = 3;
+        public int ReconnectIntervalSec = 3;
 
         /// <summary>
         /// 最大重连次数（0=无限）
         /// </summary>
-        public int MaxReconnectCount  = 5;
+        public int MaxReconnectCount = 5;
 
         /// <summary>
         /// 接收缓冲区大小
         /// </summary>
-        public int ReceiveBufferSize  = 65536;
+        public int ReceiveBufferSize = 65536;
 
         /// <summary>
         /// 发送缓冲区大小
@@ -70,7 +70,7 @@ namespace T2FGame.Client.Network
         /// <summary>
         /// 是否启用日志
         /// </summary>
-        public bool EnableLog  = true;
+        public bool EnableLog = true;
 
         /// <summary>
         /// 是否使用工作线程进行网络收发
@@ -86,7 +86,6 @@ namespace T2FGame.Client.Network
 #else
             true;
 #endif
-        
         /// <summary>
         /// 克隆配置
         /// </summary>
@@ -107,7 +106,7 @@ namespace T2FGame.Client.Network
                 ReceiveBufferSize = ReceiveBufferSize,
                 SendBufferSize = SendBufferSize,
                 EnableLog = EnableLog,
-                UseWorkerThread = UseWorkerThread
+                UseWorkerThread = UseWorkerThread,
             };
         }
     }

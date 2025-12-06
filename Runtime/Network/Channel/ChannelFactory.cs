@@ -22,7 +22,11 @@ namespace T2FGame.Client.Network.Channel
                 ChannelType.Tcp => new TcpChannel(),
                 ChannelType.Udp => new UdpChannel(),
                 ChannelType.WebSocket => new WebSocketChannel(),
-                _ => throw new ArgumentOutOfRangeException(nameof(channelType), channelType, "Unsupported channel type")
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(channelType),
+                    channelType,
+                    "Unsupported channel type"
+                ),
             };
 
             GameLogger.Log($"[ChannelFactory] Created {channelType} channel");
@@ -48,7 +52,11 @@ namespace T2FGame.Client.Network.Channel
         /// <param name="host">服务器地址</param>
         /// <param name="port">服务器端口</param>
         /// <returns>已连接的通道实例</returns>
-        public static IProtocolChannel CreateAndConnect(ChannelType channelType, string host, int port)
+        public static IProtocolChannel CreateAndConnect(
+            ChannelType channelType,
+            string host,
+            int port
+        )
         {
             var channel = CreateAndInit(channelType);
             channel.Connect(host, port);

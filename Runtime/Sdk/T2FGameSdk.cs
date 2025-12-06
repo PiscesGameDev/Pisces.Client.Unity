@@ -5,6 +5,7 @@ using T2FGame.Client.Network;
 using T2FGame.Client.Protocol;
 using T2FGame.Client.Utils;
 using T2FGame.Protocol;
+using Google.Protobuf;
 
 namespace T2FGame.Client.Sdk
 {
@@ -15,7 +16,7 @@ namespace T2FGame.Client.Sdk
     public class T2FGameSdk : IDisposable
     {
         private static T2FGameSdk _instance;
-        private static readonly object _lock = new object();
+        private static readonly object _lock = new();
 
         private GameClient _client;
         private GameClientOptions _options;
@@ -65,9 +66,7 @@ namespace T2FGame.Client.Sdk
         /// </summary>
         public event Action<Exception> OnError;
 
-        private T2FGameSdk()
-        {
-        }
+        private T2FGameSdk() { }
 
         /// <summary>
         /// 初始化 SDK
@@ -139,7 +138,8 @@ namespace T2FGame.Client.Sdk
         /// </summary>
         public async UniTask DisconnectAsync()
         {
-            if (_client == null) return;
+            if (_client == null)
+                return;
             await _client.DisconnectAsync();
         }
 
@@ -157,7 +157,10 @@ namespace T2FGame.Client.Sdk
         /// <param name="cmdMerge">命令路由标识</param>
         /// <param name="cancellationToken">取消令牌</param>
         /// <returns>响应消息</returns>
-        public async UniTask<ResponseMessage> RequestAsync(int cmdMerge, CancellationToken cancellationToken = default)
+        public async UniTask<ResponseMessage> RequestAsync(
+            int cmdMerge,
+            CancellationToken cancellationToken = default
+        )
         {
             EnsureConnected();
             var command = RequestCommand.Of(cmdMerge);
@@ -172,8 +175,7 @@ namespace T2FGame.Client.Sdk
         /// <param name="request">请求数据</param>
         /// <param name="cancellationToken">取消令牌</param>
         /// <returns>响应消息</returns>
-        public async UniTask<ResponseMessage> RequestAsync<TRequest>(int cmdMerge, TRequest request, CancellationToken cancellationToken = default)
-            where TRequest : Google.Protobuf.IMessage
+        public async UniTask<ResponseMessage> RequestAsync<TRequest>(int cmdMerge, TRequest request, CancellationToken cancellationToken = default) where TRequest : IMessage
         {
             EnsureConnected();
             var command = RequestCommand.Of(cmdMerge, request);
@@ -187,8 +189,7 @@ namespace T2FGame.Client.Sdk
         /// <param name="cmdMerge">命令路由标识</param>
         /// <param name="cancellationToken">取消令牌</param>
         /// <returns>响应数据</returns>
-        public async UniTask<TResponse> RequestAsync<TResponse>(int cmdMerge, CancellationToken cancellationToken = default)
-            where TResponse : Google.Protobuf.IMessage, new()
+        public async UniTask<TResponse> RequestAsync<TResponse>(int cmdMerge, CancellationToken cancellationToken = default) where TResponse : IMessage, new()
         {
             var response = await RequestAsync(cmdMerge, cancellationToken);
 
@@ -209,9 +210,7 @@ namespace T2FGame.Client.Sdk
         /// <param name="request">请求数据</param>
         /// <param name="cancellationToken">取消令牌</param>
         /// <returns>响应数据</returns>
-        public async UniTask<TResponse> RequestAsync<TRequest, TResponse>(int cmdMerge, TRequest request, CancellationToken cancellationToken = default)
-            where TRequest : Google.Protobuf.IMessage
-            where TResponse : Google.Protobuf.IMessage, new()
+        public async UniTask<TResponse> RequestAsync<TRequest, TResponse>(int cmdMerge, TRequest request, CancellationToken cancellationToken = default) where TRequest : IMessage where TResponse : IMessage, new()
         {
             var response = await RequestAsync(cmdMerge, request, cancellationToken);
 
@@ -229,7 +228,8 @@ namespace T2FGame.Client.Sdk
         /// <param name="cmdMerge">命令路由标识</param>
         public void Send(int cmdMerge)
         {
-            if (!IsConnected) return;
+            if (!IsConnected)
+                return;
             var command = RequestCommand.Of(cmdMerge);
             _client.SendRequest(command);
         }
@@ -243,7 +243,8 @@ namespace T2FGame.Client.Sdk
         public void Send<TRequest>(int cmdMerge, TRequest request)
             where TRequest : Google.Protobuf.IMessage
         {
-            if (!IsConnected) return;
+            if (!IsConnected)
+                return;
             var command = RequestCommand.Of(cmdMerge, request);
             _client.SendRequest(command);
         }
@@ -253,7 +254,8 @@ namespace T2FGame.Client.Sdk
         /// </summary>
         public void SendInt(int cmdMerge, int value)
         {
-            if (!IsConnected) return;
+            if (!IsConnected)
+                return;
             var command = RequestCommand.OfInt(cmdMerge, value);
             _client.SendRequest(command);
         }
@@ -263,7 +265,8 @@ namespace T2FGame.Client.Sdk
         /// </summary>
         public void SendString(int cmdMerge, string value)
         {
-            if (!IsConnected) return;
+            if (!IsConnected)
+                return;
             var command = RequestCommand.OfString(cmdMerge, value);
             _client.SendRequest(command);
         }
@@ -273,7 +276,8 @@ namespace T2FGame.Client.Sdk
         /// </summary>
         public void SendLong(int cmdMerge, long value)
         {
-            if (!IsConnected) return;
+            if (!IsConnected)
+                return;
             var command = RequestCommand.OfLong(cmdMerge, value);
             _client.SendRequest(command);
         }
@@ -283,7 +287,8 @@ namespace T2FGame.Client.Sdk
         /// </summary>
         public void SendBool(int cmdMerge, bool value)
         {
-            if (!IsConnected) return;
+            if (!IsConnected)
+                return;
             var command = RequestCommand.OfBool(cmdMerge, value);
             _client.SendRequest(command);
         }
@@ -328,7 +333,8 @@ namespace T2FGame.Client.Sdk
 
         protected virtual void Dispose(bool disposing)
         {
-            if (_disposed) return;
+            if (_disposed)
+                return;
 
             _disposed = true;
 

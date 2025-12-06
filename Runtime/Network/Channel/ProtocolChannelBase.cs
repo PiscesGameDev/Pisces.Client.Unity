@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Net;
-using System.Threading;
 using System.Net.Sockets;
+using System.Threading;
 using T2FGame.Client.Utils;
 
 namespace T2FGame.Client.Network.Channel
@@ -80,7 +80,8 @@ namespace T2FGame.Client.Network.Channel
 
         public virtual void OnInit()
         {
-            if (_isEnableThread) return;
+            if (_isEnableThread)
+                return;
 
             // 捕获主线程上下文
             _mainThreadContext = SynchronizationContext.Current;
@@ -91,14 +92,14 @@ namespace T2FGame.Client.Network.Channel
             _sendThread = new Thread(SendThreadLoop)
             {
                 Name = $"{GetType().Name}_SendThread",
-                IsBackground = true
+                IsBackground = true,
             };
             _sendThread.Start();
 
             _receiveThread = new Thread(ReceiveThreadLoop)
             {
                 Name = $"{GetType().Name}_ReceiveThread",
-                IsBackground = true
+                IsBackground = true,
             };
             _receiveThread.Start();
 
@@ -127,7 +128,9 @@ namespace T2FGame.Client.Network.Channel
                 }
                 catch (SocketException ex)
                 {
-                    GameLogger.LogError($"[{ChannelType}Channel] Socket receive error: {ex.SocketErrorCode} - {ex.Message}");
+                    GameLogger.LogError(
+                        $"[{ChannelType}Channel] Socket receive error: {ex.SocketErrorCode} - {ex.Message}"
+                    );
                     HandleDisconnect();
                 }
                 catch (ObjectDisposedException)
@@ -158,11 +161,13 @@ namespace T2FGame.Client.Network.Channel
                     // 等待信号或超时
                     _sendSignal.WaitOne(100);
 
-                    if (!IsConnected) continue;
+                    if (!IsConnected)
+                        continue;
 
                     while (_sendQueue.TryDequeue(out var sendBuffer))
                     {
-                        if (sendBuffer == null || sendBuffer.Length == 0) continue;
+                        if (sendBuffer == null || sendBuffer.Length == 0)
+                            continue;
 
                         var totalSent = 0;
                         var remaining = sendBuffer.Length;
@@ -170,7 +175,12 @@ namespace T2FGame.Client.Network.Channel
                         // 确保完整发送
                         while (remaining > 0)
                         {
-                            var sent = Client.Send(sendBuffer, totalSent, remaining, SocketFlags.None);
+                            var sent = Client.Send(
+                                sendBuffer,
+                                totalSent,
+                                remaining,
+                                SocketFlags.None
+                            );
                             if (sent <= 0)
                             {
                                 throw new SocketException((int)SocketError.ConnectionReset);
@@ -185,7 +195,9 @@ namespace T2FGame.Client.Network.Channel
                 }
                 catch (SocketException ex)
                 {
-                    GameLogger.LogError($"[{ChannelType}Channel] Socket send error: {ex.SocketErrorCode} - {ex.Message}");
+                    GameLogger.LogError(
+                        $"[{ChannelType}Channel] Socket send error: {ex.SocketErrorCode} - {ex.Message}"
+                    );
                     HandleDisconnect();
                 }
                 catch (ObjectDisposedException)
@@ -220,7 +232,7 @@ namespace T2FGame.Client.Network.Channel
                 {
                     ReceiveBufferSize = ReceiveBufferSize,
                     SendBufferSize = ReceiveBufferSize,
-                    NoDelay = true // 禁用 Nagle 算法，减少延迟
+                    NoDelay = true, // 禁用 Nagle 算法，减少延迟
                 };
 
                 var endPoint = new IPEndPoint(IPAddress.Parse(host), port);
@@ -239,7 +251,8 @@ namespace T2FGame.Client.Network.Channel
 
         public virtual void Disconnect()
         {
-            if (Client == null) return;
+            if (Client == null)
+                return;
 
             try
             {
@@ -266,7 +279,8 @@ namespace T2FGame.Client.Network.Channel
 
         public virtual void Send(byte[] data)
         {
-            if (data == null || data.Length == 0) return;
+            if (data == null || data.Length == 0)
+                return;
 
             if (!IsConnected)
             {
@@ -283,7 +297,8 @@ namespace T2FGame.Client.Network.Channel
         /// </summary>
         private void HandleDisconnect()
         {
-            if (!_isConnected) return;
+            if (!_isConnected)
+                return;
 
             _isConnected = false;
             InvokeOnMainThread(() => DisconnectServerEvent?.Invoke(this));
@@ -294,7 +309,8 @@ namespace T2FGame.Client.Network.Channel
         /// </summary>
         protected void InvokeOnMainThread(Action action)
         {
-            if (action == null) return;
+            if (action == null)
+                return;
 
             if (_mainThreadContext != null)
             {
@@ -326,7 +342,8 @@ namespace T2FGame.Client.Network.Channel
 
         protected virtual void Dispose(bool disposing)
         {
-            if (_isDisposed) return;
+            if (_isDisposed)
+                return;
 
             _isDisposed = true;
             _isEnableThread = false;

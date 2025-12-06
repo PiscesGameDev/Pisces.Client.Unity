@@ -55,10 +55,14 @@ namespace T2FGame.Client.Network.Channel
             {
                 // 创建 UDP Socket
                 Client?.Close();
-                var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
+                var socket = new Socket(
+                    AddressFamily.InterNetwork,
+                    SocketType.Dgram,
+                    ProtocolType.Udp
+                )
                 {
                     ReceiveBufferSize = UdpReceiveBufferSize,
-                    SendBufferSize = UdpReceiveBufferSize
+                    SendBufferSize = UdpReceiveBufferSize,
                 };
 
                 // 保存服务器端点
@@ -116,7 +120,12 @@ namespace T2FGame.Client.Network.Channel
                 }
 
                 // UDP 接收 - 每次接收一个完整的数据报
-                var bytesRead = client.Receive(_receiveBuffer, 0, _receiveBuffer.Length, SocketFlags.None);
+                var bytesRead = client.Receive(
+                    _receiveBuffer,
+                    0,
+                    _receiveBuffer.Length,
+                    SocketFlags.None
+                );
 
                 if (bytesRead <= 0)
                     return null;
@@ -144,11 +153,14 @@ namespace T2FGame.Client.Network.Channel
         /// </summary>
         public override void Send(byte[] data)
         {
-            if (data == null || data.Length == 0) return;
+            if (data == null || data.Length == 0)
+                return;
 
             if (data.Length > UdpReceiveBufferSize)
             {
-                GameLogger.LogError($"[UdpChannel] Data too large: {data.Length} bytes (max {UdpReceiveBufferSize})");
+                GameLogger.LogError(
+                    $"[UdpChannel] Data too large: {data.Length} bytes (max {UdpReceiveBufferSize})"
+                );
                 return;
             }
 

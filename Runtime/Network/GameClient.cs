@@ -33,14 +33,18 @@ namespace T2FGame.Client.Network
         /// 等待响应的请求队列
         /// Key: MsgId, Value: TaskCompletionSource
         /// </summary>
-        private readonly ConcurrentDictionary<int, UniTaskCompletionSource<ResponseMessage>> _pendingRequests = new();
+        private readonly ConcurrentDictionary<
+            int,
+            UniTaskCompletionSource<ResponseMessage>
+        > _pendingRequests = new();
 
         public ConnectionState State
         {
             get => _state;
             private set
             {
-                if (_state == value) return;
+                if (_state == value)
+                    return;
                 var oldState = _state;
                 _state = value;
                 GameLogger.Log($"[GameClient] State changed: {oldState} -> {value}");
@@ -48,7 +52,8 @@ namespace T2FGame.Client.Network
             }
         }
 
-        public bool IsConnected => _state == ConnectionState.Connected && _channel?.IsConnected == true;
+        public bool IsConnected =>
+            _state == ConnectionState.Connected && _channel?.IsConnected == true;
 
         public GameClientOptions Options => _options;
 
@@ -95,10 +100,13 @@ namespace T2FGame.Client.Network
                 // 连接（带超时）
                 using var cts = new CancellationTokenSource(_options.ConnectTimeoutMs);
 
-                await UniTask.RunOnThreadPool(() =>
-                {
-                    _channel.Connect(_options.Host, _options.Port);
-                }, cancellationToken: cts.Token);
+                await UniTask.RunOnThreadPool(
+                    () =>
+                    {
+                        _channel.Connect(_options.Host, _options.Port);
+                    },
+                    cancellationToken: cts.Token
+                );
 
                 // 等待连接建立
                 await UniTask.WaitUntil(() => _channel.IsConnected, cancellationToken: cts.Token);
@@ -114,7 +122,9 @@ namespace T2FGame.Client.Network
             catch (OperationCanceledException)
             {
                 State = ConnectionState.Disconnected;
-                var ex = new TimeoutException($"Connect timeout after {_options.ConnectTimeoutMs}ms");
+                var ex = new TimeoutException(
+                    $"Connect timeout after {_options.ConnectTimeoutMs}ms"
+                );
                 OnError?.Invoke(ex);
                 throw ex;
             }
@@ -129,7 +139,8 @@ namespace T2FGame.Client.Network
 
         public async UniTask DisconnectAsync()
         {
-            if (_disposed) return;
+            if (_disposed)
+                return;
 
             StopHeartbeat();
             StopReconnect();
@@ -149,7 +160,8 @@ namespace T2FGame.Client.Network
 
         public void Close()
         {
-            if (_disposed) return;
+            if (_disposed)
+                return;
 
             _isClosed = true;
             StopHeartbeat();
@@ -168,7 +180,10 @@ namespace T2FGame.Client.Network
             GameLogger.Log("[GameClient] Closed");
         }
 
-        public async UniTask SendAsync(ExternalMessage message, CancellationToken cancellationToken = default)
+        public async UniTask SendAsync(
+            ExternalMessage message,
+            CancellationToken cancellationToken = default
+        )
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(GameClient));
@@ -200,7 +215,10 @@ namespace T2FGame.Client.Network
         /// <param name="command">请求命令</param>
         /// <param name="cancellationToken">取消令牌</param>
         /// <returns>响应消息</returns>
-        public async UniTask<ResponseMessage> RequestAsync(RequestCommand command, CancellationToken cancellationToken = default)
+        public async UniTask<ResponseMessage> RequestAsync(
+            RequestCommand command,
+            CancellationToken cancellationToken = default
+        )
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(GameClient));
@@ -227,14 +245,19 @@ namespace T2FGame.Client.Network
 
                 // 等待响应（带超时）
                 using var timeoutCts = new CancellationTokenSource(_options.RequestTimeoutMs);
-                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+                    cancellationToken,
+                    timeoutCts.Token
+                );
 
                 var response = await tcs.Task.AttachExternalCancellation(linkedCts.Token);
                 return response;
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
-                throw new TimeoutException($"Request timeout after {_options.RequestTimeoutMs}ms (MsgId: {command.MsgId})");
+                throw new TimeoutException(
+                    $"Request timeout after {_options.RequestTimeoutMs}ms (MsgId: {command.MsgId})"
+                );
             }
             finally
             {
@@ -250,7 +273,8 @@ namespace T2FGame.Client.Network
         /// </summary>
         public void SendRequest(RequestCommand command)
         {
-            if (_disposed || !IsConnected || command == null) return;
+            if (_disposed || !IsConnected || command == null)
+                return;
 
             try
             {
@@ -270,13 +294,14 @@ namespace T2FGame.Client.Network
                 CmdCode = (int)command.CommandType,
                 CmdMerge = command.CmdMerge,
                 MsgId = command.MsgId,
-                Data = command.Data
+                Data = command.Data,
             };
         }
 
         private void OnChannelReceiveMessage(IProtocolChannel channel, byte[] data)
         {
-            if (_disposed || data == null || data.Length == 0) return;
+            if (_disposed || data == null || data.Length == 0)
+                return;
 
             try
             {
@@ -298,7 +323,8 @@ namespace T2FGame.Client.Network
 
         private void ProcessMessage(ExternalMessage message)
         {
-            if (message == null) return;
+            if (message == null)
+                return;
 
             // 判断是心跳响应还是业务消息
             if (message.CmdCode == (int)CommandType.Heartbeat)
@@ -327,7 +353,8 @@ namespace T2FGame.Client.Network
 
         private void OnChannelDisconnect(IProtocolChannel channel)
         {
-            if (_disposed || _isClosed) return;
+            if (_disposed || _isClosed)
+                return;
 
             GameLogger.LogWarning("[GameClient] Connection lost");
             State = ConnectionState.Disconnected;
@@ -366,14 +393,20 @@ namespace T2FGame.Client.Network
             {
                 try
                 {
-                    await UniTask.Delay(TimeSpan.FromSeconds(_options.HeartbeatIntervalSec), cancellationToken: cancellationToken);
+                    await UniTask.Delay(
+                        TimeSpan.FromSeconds(_options.HeartbeatIntervalSec),
+                        cancellationToken: cancellationToken
+                    );
 
-                    if (!IsConnected) break;
+                    if (!IsConnected)
+                        break;
 
                     // 检查是否超时
                     if (_heartbeatTimeoutCount >= _options.HeartbeatTimeoutCount)
                     {
-                        GameLogger.LogWarning($"[GameClient] Heartbeat timeout ({_heartbeatTimeoutCount} times)");
+                        GameLogger.LogWarning(
+                            $"[GameClient] Heartbeat timeout ({_heartbeatTimeoutCount} times)"
+                        );
                         _channel?.Disconnect();
                         break;
                     }
@@ -402,7 +435,8 @@ namespace T2FGame.Client.Network
 
         private void StartReconnect()
         {
-            if (_isClosed || _disposed) return;
+            if (_isClosed || _disposed)
+                return;
 
             StopReconnect();
 
@@ -426,7 +460,9 @@ namespace T2FGame.Client.Network
                 // 检查重连次数
                 if (_options.MaxReconnectCount > 0 && _reconnectCount >= _options.MaxReconnectCount)
                 {
-                    GameLogger.LogWarning($"[GameClient] Max reconnect attempts reached ({_reconnectCount})");
+                    GameLogger.LogWarning(
+                        $"[GameClient] Max reconnect attempts reached ({_reconnectCount})"
+                    );
                     State = ConnectionState.Disconnected;
                     break;
                 }
@@ -436,7 +472,10 @@ namespace T2FGame.Client.Network
 
                 try
                 {
-                    await UniTask.Delay(TimeSpan.FromSeconds(_options.ReconnectIntervalSec), cancellationToken: cancellationToken);
+                    await UniTask.Delay(
+                        TimeSpan.FromSeconds(_options.ReconnectIntervalSec),
+                        cancellationToken: cancellationToken
+                    );
 
                     // 重置状态
                     State = ConnectionState.Connecting;
@@ -481,7 +520,8 @@ namespace T2FGame.Client.Network
 
         protected virtual void Dispose(bool disposing)
         {
-            if (_disposed) return;
+            if (_disposed)
+                return;
 
             _disposed = true;
 
