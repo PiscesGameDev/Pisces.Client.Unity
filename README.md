@@ -212,11 +212,16 @@ public void SendChatMessage(string message)
 ### 4. 订阅服务器推送消息
 
 ```csharp
+// 定义 handler 引用（用于后续取消订阅）
+private Action<ChatMessage> _chatHandler;
+
 private void Start()
 {
-    // 方式 1: 订阅并自动解包为指定类型（推荐）
     int chatCmdMerge = CmdKit.GetMergeCmd(2, 1);
-    T2FGameSdk.Instance.Subscribe<ChatMessage>(chatCmdMerge, OnChatMessage);
+
+    // 方式 1: 订阅并自动解包为指定类型（推荐）
+    _chatHandler = OnChatMessage;
+    T2FGameSdk.Instance.Subscribe(chatCmdMerge, _chatHandler);
 
     // 方式 2: 订阅原始消息
     T2FGameSdk.Instance.Subscribe(chatCmdMerge, message =>
@@ -231,11 +236,15 @@ private void OnChatMessage(ChatMessage msg)
     Debug.Log($"[{msg.Sender}]: {msg.Content}");
 }
 
-// 取消订阅
 private void OnDestroy()
 {
     int chatCmdMerge = CmdKit.GetMergeCmd(2, 1);
-    T2FGameSdk.Instance.Unsubscribe(chatCmdMerge);
+
+    // 取消特定订阅（必须使用订阅时的 handler 引用）
+    T2FGameSdk.Instance.Unsubscribe(chatCmdMerge, _chatHandler);
+
+    // 或者清除该 cmdMerge 的所有订阅
+    T2FGameSdk.Instance.UnsubscribeAll(chatCmdMerge);
 }
 ```
 
@@ -253,15 +262,43 @@ public void OnLoginButtonClick()
 
     int loginCmdMerge = CmdKit.GetMergeCmd(1, 1);
 
-    // 发送请求并设置回调
+    // 有请求体，泛型响应回调
     T2FGameSdk.Instance.Send<LoginRequest, LoginResponse>(
         loginCmdMerge,
         request,
         response =>
         {
-            // 收到响应后的处理
             Debug.Log($"登录成功! Token: {response.Token}");
             EnterGameScene();
+        }
+    );
+}
+
+// 无请求体，泛型响应回调
+public void OnRefreshDataClick()
+{
+    int refreshCmdMerge = CmdKit.GetMergeCmd(1, 2);
+
+    T2FGameSdk.Instance.Send<PlayerDataResponse>(
+        refreshCmdMerge,
+        response =>
+        {
+            Debug.Log($"刷新成功! Level: {response.Level}");
+            UpdateUI(response);
+        }
+    );
+}
+
+// 无请求体，原始响应回调
+public void OnPingClick()
+{
+    int pingCmdMerge = CmdKit.GetMergeCmd(1, 3);
+
+    T2FGameSdk.Instance.Send(
+        pingCmdMerge,
+        response =>
+        {
+            Debug.Log($"Ping 成功! Status: {response.ResponseStatus}");
         }
     );
 }
@@ -341,7 +378,14 @@ void SendBool(int cmdMerge, bool value)
 #### 带回调的发送
 
 ```csharp
-// 发送请求并在收到响应时执行回调
+// 发送请求并在收到响应时执行回调（无请求体，原始响应）
+void Send(int cmdMerge, Action<ResponseMessage> callback)
+
+// 发送请求并在收到响应时执行回调（无请求体，泛型响应）
+void Send<TResponse>(int cmdMerge, Action<TResponse> callback)
+    where TResponse : IMessage, new()
+
+// 发送请求并在收到响应时执行回调（有请求体，泛型响应）
 void Send<TRequest, TResponse>(
     int cmdMerge,
     TRequest request,
@@ -359,10 +403,17 @@ void Subscribe(int cmdMerge, Action<ExternalMessage> callback)
 void Subscribe<TMessage>(int cmdMerge, Action<TMessage> callback)
     where TMessage : IMessage, new()
 
-// 取消订阅（传 null 则取消该 cmdMerge 的所有订阅）
-void Unsubscribe(int cmdMerge, Action<ExternalMessage> callback = null)
+// 取消订阅（必须传入订阅时的 handler 引用）
+void Unsubscribe(int cmdMerge, Action<ExternalMessage> callback)
 
-// 取消所有订阅
+// 取消订阅（泛型版本，必须传入订阅时的 handler 引用）
+void Unsubscribe<TMessage>(int cmdMerge, Action<TMessage> callback)
+    where TMessage : IMessage, new()
+
+// 清除指定 cmdMerge 的所有订阅
+void UnsubscribeAll(int cmdMerge)
+
+// 清除所有订阅
 void UnsubscribeAll()
 ```
 
@@ -614,11 +665,27 @@ public class GameNetworkManager : MonoBehaviour
         Debug.Log($"📨 收到服务器推送：CmdMerge={message.CmdMerge}");
     }
 
+    // 保存 handler 引用，用于取消订阅
+    private Action<ChatMessage> _chatHandler;
+    private Action<SystemNotification> _systemHandler;
+    private Action<GoldChangeNotification> _goldHandler;
+
     private void SubscribeMessages()
     {
-        T2FGameSdk.Instance.Subscribe<ChatMessage>(3001, OnChatMessage);
-        T2FGameSdk.Instance.Subscribe<SystemNotification>(3002, OnSystemNotification);
-        T2FGameSdk.Instance.Subscribe<GoldChangeNotification>(3003, OnGoldChanged);
+        _chatHandler = OnChatMessage;
+        _systemHandler = OnSystemNotification;
+        _goldHandler = OnGoldChanged;
+
+        T2FGameSdk.Instance.Subscribe(3001, _chatHandler);
+        T2FGameSdk.Instance.Subscribe(3002, _systemHandler);
+        T2FGameSdk.Instance.Subscribe(3003, _goldHandler);
+    }
+
+    private void UnsubscribeMessages()
+    {
+        T2FGameSdk.Instance.Unsubscribe(3001, _chatHandler);
+        T2FGameSdk.Instance.Unsubscribe(3002, _systemHandler);
+        T2FGameSdk.Instance.Unsubscribe(3003, _goldHandler);
     }
 
     private void OnChatMessage(ChatMessage chatMsg)
@@ -654,8 +721,8 @@ public class GameNetworkManager : MonoBehaviour
         T2FGameSdk.Instance.OnMessageReceived -= OnServerPush;
         T2FGameSdk.Instance.OnError -= OnNetworkError;
 
-        // 取消消息订阅
-        T2FGameSdk.Instance.UnsubscribeAll();
+        // 取消消息订阅（使用保存的 handler 引用）
+        UnsubscribeMessages();
 
         T2FGameSdk.Instance.Close();
     }
