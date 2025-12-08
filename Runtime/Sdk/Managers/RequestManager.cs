@@ -43,12 +43,7 @@ namespace T2FGame.Client.Sdk
         /// <summary>
         /// 发送请求并等待响应
         /// </summary>
-        public async UniTask<ResponseMessage> RequestAsync<TRequest>(
-            int cmdMerge,
-            TRequest request,
-            CancellationToken cancellationToken = default
-        )
-            where TRequest : IMessage
+        public async UniTask<ResponseMessage> RequestAsync<TRequest>(int cmdMerge, TRequest request, CancellationToken cancellationToken = default) where TRequest : IMessage
         {
             EnsureConnected();
             var command = RequestCommand.Of(cmdMerge, request);

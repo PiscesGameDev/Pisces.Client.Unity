@@ -156,10 +156,7 @@ namespace T2FGame.Client.Sdk
         /// <summary>
         /// 发送请求并等待响应
         /// </summary>
-        public async UniTask<ResponseMessage> RequestAsync(
-            int cmdMerge,
-            CancellationToken cancellationToken = default
-        )
+        public async UniTask<ResponseMessage> RequestAsync(int cmdMerge, CancellationToken cancellationToken = default)
         {
             EnsureInitialized();
             return await _requestManager.RequestAsync(cmdMerge, cancellationToken);
@@ -168,12 +165,7 @@ namespace T2FGame.Client.Sdk
         /// <summary>
         /// 发送请求并等待响应
         /// </summary>
-        public async UniTask<ResponseMessage> RequestAsync<TRequest>(
-            int cmdMerge,
-            TRequest request,
-            CancellationToken cancellationToken = default
-        )
-            where TRequest : IMessage
+        public async UniTask<ResponseMessage> RequestAsync<TRequest>(int cmdMerge, TRequest request, CancellationToken cancellationToken = default) where TRequest : IMessage
         {
             EnsureInitialized();
             return await _requestManager.RequestAsync(cmdMerge, request, cancellationToken);
@@ -182,11 +174,7 @@ namespace T2FGame.Client.Sdk
         /// <summary>
         /// 发送请求并等待响应（获取指定类型的响应数据）
         /// </summary>
-        public async UniTask<TResponse> RequestAsync<TResponse>(
-            int cmdMerge,
-            CancellationToken cancellationToken = default
-        )
-            where TResponse : IMessage, new()
+        public async UniTask<TResponse> RequestAsync<TResponse>(int cmdMerge, CancellationToken cancellationToken = default) where TResponse : IMessage, new()
         {
             EnsureInitialized();
             return await _requestManager.RequestAsync<TResponse>(cmdMerge, cancellationToken);
@@ -195,13 +183,7 @@ namespace T2FGame.Client.Sdk
         /// <summary>
         /// 发送请求并等待响应（获取指定类型的响应数据）
         /// </summary>
-        public async UniTask<TResponse> RequestAsync<TRequest, TResponse>(
-            int cmdMerge,
-            TRequest request,
-            CancellationToken cancellationToken = default
-        )
-            where TRequest : IMessage
-            where TResponse : IMessage, new()
+        public async UniTask<TResponse> RequestAsync<TRequest, TResponse>(int cmdMerge, TRequest request, CancellationToken cancellationToken = default) where TRequest : IMessage where TResponse : IMessage, new()
         {
             EnsureInitialized();
             return await _requestManager.RequestAsync<TRequest, TResponse>(

@@ -34,11 +34,7 @@ namespace T2FGame.Client.Sdk
         /// </summary>
         public CommandType CommandType { get; private set; } = CommandType.Business;
 
-        public void Initialize(
-            int cmdMerge,
-            ByteString data,
-            CommandType commandType = CommandType.Business
-        )
+        private void Initialize(int cmdMerge, ByteString data, CommandType commandType = CommandType.Business)
         {
             CmdMerge = cmdMerge;
             Data = data ?? _emptyByteString;
