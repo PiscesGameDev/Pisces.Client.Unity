@@ -21,6 +21,13 @@ namespace T2FGame.Client.Sdk
         private readonly Dictionary<int, Action<ExternalMessage>> _routes = new();
 
         /// <summary>
+        /// 泛型 handler 到包装后 handler 的映射表
+        /// Key: 原始泛型 handler 的 hashcode + cmdMerge 组合
+        /// Value: 包装后的 Action&lt;ExternalMessage&gt;
+        /// </summary>
+        private readonly Dictionary<(int cmdMerge, Delegate handler), Action<ExternalMessage>> _handlerWrappers = new();
+
+        /// <summary>
         /// 订阅指定 cmdMerge 的消息
         /// </summary>
         /// <param name="cmdMerge">命令路由标识</param>
@@ -54,21 +61,24 @@ namespace T2FGame.Client.Sdk
             if (handler == null)
                 return;
 
-            Subscribe(
-                cmdMerge,
-                message =>
+            // 创建包装器
+            Action<ExternalMessage> wrapper = message =>
+            {
+                try
                 {
-                    try
-                    {
-                        var typedMessage = ProtoSerializer.Deserialize<TMessage>(message.Data);
-                        handler.Invoke(typedMessage);
-                    }
-                    catch (Exception ex)
-                    {
-                        GameLogger.LogError($"[MessageRouter] 解包消息失败: {ex.Message}");
-                    }
+                    var typedMessage = ProtoSerializer.Deserialize<TMessage>(message.Data);
+                    handler.Invoke(typedMessage);
                 }
-            );
+                catch (Exception ex)
+                {
+                    GameLogger.LogError($"[MessageRouter] 解包消息失败: {ex.Message}");
+                }
+            };
+
+            // 保存映射关系，用于后续取消订阅
+            _handlerWrappers[(cmdMerge, handler)] = wrapper;
+
+            Subscribe(cmdMerge, wrapper);
         }
 
         /// <summary>
@@ -95,6 +105,32 @@ namespace T2FGame.Client.Sdk
             }
 
             GameLogger.Log($"[MessageRouter] 已取消订阅 cmdMerge: {cmdMerge}");
+        }
+
+        /// <summary>
+        /// 取消订阅指定 cmdMerge 的消息（泛型版本）
+        /// </summary>
+        /// <typeparam name="TMessage">消息类型</typeparam>
+        /// <param name="cmdMerge">命令路由标识</param>
+        /// <param name="handler">消息处理回调</param>
+        public void Unsubscribe<TMessage>(int cmdMerge, Action<TMessage> handler)
+            where TMessage : IMessage, new()
+        {
+            if (handler == null)
+                return;
+
+            var key = (cmdMerge, (Delegate)handler);
+            if (!_handlerWrappers.TryGetValue(key, out var wrapper))
+            {
+                GameLogger.LogWarning($"[MessageRouter] 未找到对应的订阅 cmdMerge: {cmdMerge}");
+                return;
+            }
+
+            // 取消订阅包装器
+            Unsubscribe(cmdMerge, wrapper);
+
+            // 移除映射关系
+            _handlerWrappers.Remove(key);
         }
 
         /// <summary>
@@ -129,6 +165,21 @@ namespace T2FGame.Client.Sdk
         public void Clear(int cmdMerge)
         {
             _routes.Remove(cmdMerge);
+
+            // 清除该 cmdMerge 相关的包装器映射
+            var keysToRemove = new List<(int, Delegate)>();
+            foreach (var key in _handlerWrappers.Keys)
+            {
+                if (key.cmdMerge == cmdMerge)
+                {
+                    keysToRemove.Add(key);
+                }
+            }
+            foreach (var key in keysToRemove)
+            {
+                _handlerWrappers.Remove(key);
+            }
+
             GameLogger.Log($"[MessageRouter] 已清除 cmdMerge 的所有订阅: {cmdMerge}");
         }
 
@@ -138,6 +189,7 @@ namespace T2FGame.Client.Sdk
         public void ClearAll()
         {
             _routes.Clear();
+            _handlerWrappers.Clear();
             GameLogger.Log("[MessageRouter] 已清除所有订阅");
         }
 

@@ -325,21 +325,37 @@ namespace T2FGame.Client.Sdk
         /// <summary>
         /// 取消订阅指定 cmdMerge 的消息
         /// </summary>
-        public void Unsubscribe(int cmdMerge, Action<ExternalMessage> callback = null)
+        public void Unsubscribe(int cmdMerge, Action<ExternalMessage> callback)
         {
             if (!IsInitialized)
                 return;
 
-            if (callback == null)
-            {
-                _messageRouter.Clear(cmdMerge);
-            }
-            else
-            {
-                _messageRouter.Unsubscribe(cmdMerge, callback);
-            }
+            _messageRouter.Unsubscribe(cmdMerge, callback);
         }
 
+        /// <summary>
+        /// 取消订阅指定 cmdMerge 的消息（泛型版本）
+        /// </summary>
+        public void Unsubscribe<TMessage>(int cmdMerge, Action<TMessage> callback) where TMessage : IMessage, new()
+        {
+            if (!IsInitialized)
+                return;
+
+            _messageRouter.Unsubscribe(cmdMerge, callback);
+        }
+        
+        /// <summary>
+        /// 清除该 cmdMerge 的所有订阅
+        /// </summary>
+        /// <param name="cmdMerge"></param>
+        public void UnsubscribeAll(int cmdMerge)
+        {
+            if (!IsInitialized)
+                return;
+            
+            _messageRouter.Clear(cmdMerge);
+        }
+        
         /// <summary>
         /// 取消所有消息订阅
         /// </summary>
