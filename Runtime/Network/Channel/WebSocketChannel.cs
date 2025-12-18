@@ -1,8 +1,8 @@
 using System;
-using T2FGame.Client.Utils;
+using Pisces.Client.Utils;
 using UnityWebSocket;
 
-namespace T2FGame.Client.Network.Channel
+namespace Pisces.Client.Network.Channel
 {
     /// <summary>
     /// WebSocket 通道实现

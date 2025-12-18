@@ -1,9 +1,9 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using T2FGame.Client.Utils;
+using Pisces.Client.Utils;
 
-namespace T2FGame.Client.Network.Channel
+namespace Pisces.Client.Network.Channel
 {
     /// <summary>
     /// UDP 通道实现

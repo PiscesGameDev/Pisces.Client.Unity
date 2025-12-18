@@ -1,4 +1,4 @@
-namespace T2FGame.Client.Utils
+namespace Pisces.Client.Utils
 {
     /// <summary>
     /// 游戏日志工具

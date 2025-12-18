@@ -1,7 +1,7 @@
 using System;
-using T2FGame.Client.Utils;
+using Pisces.Client.Utils;
 
-namespace T2FGame.Client.Network.Channel
+namespace Pisces.Client.Network.Channel
 {
     /// <summary>
     /// 通道工厂

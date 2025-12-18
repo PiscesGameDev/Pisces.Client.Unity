@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
-using T2FGame.Client.Protocol;
-using T2FGame.Client.Utils;
-using T2FGame.Protocol;
+using Pisces.Client.Protocol;
+using Pisces.Client.Utils;
+using Pisces.Protocol;
 
-namespace T2FGame.Client.Sdk
+namespace Pisces.Client.Sdk
 {
     /// <summary>
     /// 对 ExternalMessage 的封装，提供安全的访问器与缓存。

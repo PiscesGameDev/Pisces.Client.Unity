@@ -1,4 +1,4 @@
-# T2FGame Client SDK
+# Pisces Client SDK
 
 <div align="center">
 
@@ -16,7 +16,7 @@
 
 ## 📖 项目简介
 
-T2FGame Client SDK 是一个专为 Unity 游戏开发设计的**独立、轻量、高性能**的网络通信框架。它基于 **Protobuf协议**，提供完整的客户端网络功能，包括连接管理、消息收发、心跳保活、自动重连等。
+Pisces Client SDK 是一个专为 Unity 游戏开发设计的**独立、轻量、高性能**的网络通信框架。它基于 **Protobuf协议**，提供完整的客户端网络功能，包括连接管理、消息收发、心跳保活、自动重连等。
 
 ### 设计理念
 
@@ -66,7 +66,7 @@ T2FGame Client SDK 是一个专为 Unity 游戏开发设计的**独立、轻量�
 2. 点击 `+` → `Add package from git URL...`
 3. 输入：
 ```
-https://github.com/unittt/T2FGame.Client.Unity.git
+https://github.com/PiscesGameDev/Pisces.Client.Unity.git
 ```
 
 ### 方式 2：本地安装
@@ -78,7 +78,7 @@ https://github.com/unittt/T2FGame.Client.Unity.git
 
 ### 方式 3：直接复制
 
-将整个 `T2FGame.Client.Unity` 文件夹复制到项目的 `Assets` 目录下。
+将整个 `Pisces.Client.Unity` 文件夹复制到项目的 `Assets` 目录下。
 
 ### 依赖项
 
@@ -113,8 +113,8 @@ https://github.com/psygames/UnityWebSocket.git#upm
 
 ```csharp
 using Cysharp.Threading.Tasks;
-using T2FGame.Client.Network;
-using T2FGame.Client.Sdk;
+using Pisces.Client.Network;
+using Pisces.Client.Sdk;
 using UnityEngine;
 
 public class NetworkExample : MonoBehaviour
@@ -131,15 +131,15 @@ public class NetworkExample : MonoBehaviour
         };
 
         // 2. 初始化 SDK
-        T2FGameSdk.Instance.Initialize(options);
+        PiscesSdk.Instance.Initialize(options);
 
         // 3. 订阅事件
-        T2FGameSdk.Instance.OnStateChanged += OnConnectionStateChanged;
+        PiscesSdk.Instance.OnStateChanged += OnConnectionStateChanged;
 
         // 4. 连接服务器
         try
         {
-            await T2FGameSdk.Instance.ConnectAsync();
+            await PiscesSdk.Instance.ConnectAsync();
             Debug.Log("连接成功！");
         }
         catch (Exception ex)
@@ -158,7 +158,7 @@ public class NetworkExample : MonoBehaviour
 ### 2. 发送请求并等待响应
 
 ```csharp
-using T2FGame.Protocol; // 你的 Protobuf 消息定义
+using Pisces.Protocol; // 你的 Protobuf 消息定义
 
 public class LoginExample : MonoBehaviour
 {
@@ -174,7 +174,7 @@ public class LoginExample : MonoBehaviour
         try
         {
             // 发送请求并等待响应（带泛型参数）
-            var response = await T2FGameSdk.Instance.RequestAsync<LoginRequest, LoginResponse>(
+            var response = await PiscesSdk.Instance.RequestAsync<LoginRequest, LoginResponse>(
                 cmdMerge: 1001, // 命令码（根据服务器协议定义）
                 request: request
             );
@@ -199,13 +199,13 @@ public class LoginExample : MonoBehaviour
 public void SendHeartbeat()
 {
     // 发送心跳消息（不需要等待响应）
-    T2FGameSdk.Instance.Send(cmdMerge: 1);
+    PiscesSdk.Instance.Send(cmdMerge: 1);
 }
 
 public void SendChatMessage(string message)
 {
     var chatMsg = new ChatMessage { Content = message };
-    T2FGameSdk.Instance.Send(cmdMerge: 2001, chatMsg);
+    PiscesSdk.Instance.Send(cmdMerge: 2001, chatMsg);
 }
 ```
 
@@ -221,10 +221,10 @@ private void Start()
 
     // 方式 1: 订阅并自动解包为指定类型（推荐）
     _chatHandler = OnChatMessage;
-    T2FGameSdk.Instance.Subscribe(chatCmdMerge, _chatHandler);
+    PiscesSdk.Instance.Subscribe(chatCmdMerge, _chatHandler);
 
     // 方式 2: 订阅原始消息
-    T2FGameSdk.Instance.Subscribe(chatCmdMerge, message =>
+    PiscesSdk.Instance.Subscribe(chatCmdMerge, message =>
     {
         var chatMsg = ProtoSerializer.Deserialize<ChatMessage>(message.Data);
         Debug.Log($"收到聊天: {chatMsg.Content}");
@@ -241,10 +241,10 @@ private void OnDestroy()
     int chatCmdMerge = CmdKit.GetMergeCmd(2, 1);
 
     // 取消特定订阅（必须使用订阅时的 handler 引用）
-    T2FGameSdk.Instance.Unsubscribe(chatCmdMerge, _chatHandler);
+    PiscesSdk.Instance.Unsubscribe(chatCmdMerge, _chatHandler);
 
     // 或者清除该 cmdMerge 的所有订阅
-    T2FGameSdk.Instance.UnsubscribeAll(chatCmdMerge);
+    PiscesSdk.Instance.UnsubscribeAll(chatCmdMerge);
 }
 ```
 
@@ -263,7 +263,7 @@ public void OnLoginButtonClick()
     int loginCmdMerge = CmdKit.GetMergeCmd(1, 1);
 
     // 有请求体，泛型响应回调
-    T2FGameSdk.Instance.Send<LoginRequest, LoginResponse>(
+    PiscesSdk.Instance.Send<LoginRequest, LoginResponse>(
         loginCmdMerge,
         request,
         response =>
@@ -279,7 +279,7 @@ public void OnRefreshDataClick()
 {
     int refreshCmdMerge = CmdKit.GetMergeCmd(1, 2);
 
-    T2FGameSdk.Instance.Send<PlayerDataResponse>(
+    PiscesSdk.Instance.Send<PlayerDataResponse>(
         refreshCmdMerge,
         response =>
         {
@@ -294,7 +294,7 @@ public void OnPingClick()
 {
     int pingCmdMerge = CmdKit.GetMergeCmd(1, 3);
 
-    T2FGameSdk.Instance.Send(
+    PiscesSdk.Instance.Send(
         pingCmdMerge,
         response =>
         {
@@ -308,7 +308,7 @@ public void OnPingClick()
 
 ## 📚 API 文档
 
-### T2FGameSdk（单例 SDK）
+### PiscesSdk（单例 SDK）
 
 #### 初始化与连接
 
@@ -506,9 +506,9 @@ public sealed class ResponseMessage
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using T2FGame.Client.Network;
-using T2FGame.Client.Sdk;
-using T2FGame.Protocol;
+using Pisces.Client.Network;
+using Pisces.Client.Sdk;
+using Pisces.Protocol;
 using UnityEngine;
 
 public class GameNetworkManager : MonoBehaviour
@@ -548,19 +548,19 @@ public class GameNetworkManager : MonoBehaviour
             EnableLog = true
         };
 
-        T2FGameSdk.Instance.Initialize(options);
+        PiscesSdk.Instance.Initialize(options);
 
         // 订阅事件
-        T2FGameSdk.Instance.OnStateChanged += OnConnectionStateChanged;
-        T2FGameSdk.Instance.OnMessageReceived += OnServerPush;
-        T2FGameSdk.Instance.OnError += OnNetworkError;
+        PiscesSdk.Instance.OnStateChanged += OnConnectionStateChanged;
+        PiscesSdk.Instance.OnMessageReceived += OnServerPush;
+        PiscesSdk.Instance.OnError += OnNetworkError;
 
         // 订阅服务器推送消息
         SubscribeMessages();
 
         try
         {
-            await T2FGameSdk.Instance.ConnectAsync();
+            await PiscesSdk.Instance.ConnectAsync();
             Debug.Log("✅ 连接服务器成功");
         }
         catch (TimeoutException)
@@ -587,7 +587,7 @@ public class GameNetworkManager : MonoBehaviour
         try
         {
             // 发送登录请求
-            var response = await T2FGameSdk.Instance.RequestAsync<LoginRequest, LoginResponse>(
+            var response = await PiscesSdk.Instance.RequestAsync<LoginRequest, LoginResponse>(
                 cmdMerge: 1001,
                 request: request,
                 cancellationToken: _cts.Token
@@ -618,7 +618,7 @@ public class GameNetworkManager : MonoBehaviour
     {
         try
         {
-            var playerData = await T2FGameSdk.Instance.RequestAsync<PlayerDataResponse>(
+            var playerData = await PiscesSdk.Instance.RequestAsync<PlayerDataResponse>(
                 cmdMerge: 1002,
                 cancellationToken: _cts.Token
             );
@@ -676,16 +676,16 @@ public class GameNetworkManager : MonoBehaviour
         _systemHandler = OnSystemNotification;
         _goldHandler = OnGoldChanged;
 
-        T2FGameSdk.Instance.Subscribe(3001, _chatHandler);
-        T2FGameSdk.Instance.Subscribe(3002, _systemHandler);
-        T2FGameSdk.Instance.Subscribe(3003, _goldHandler);
+        PiscesSdk.Instance.Subscribe(3001, _chatHandler);
+        PiscesSdk.Instance.Subscribe(3002, _systemHandler);
+        PiscesSdk.Instance.Subscribe(3003, _goldHandler);
     }
 
     private void UnsubscribeMessages()
     {
-        T2FGameSdk.Instance.Unsubscribe(3001, _chatHandler);
-        T2FGameSdk.Instance.Unsubscribe(3002, _systemHandler);
-        T2FGameSdk.Instance.Unsubscribe(3003, _goldHandler);
+        PiscesSdk.Instance.Unsubscribe(3001, _chatHandler);
+        PiscesSdk.Instance.Unsubscribe(3002, _systemHandler);
+        PiscesSdk.Instance.Unsubscribe(3003, _goldHandler);
     }
 
     private void OnChatMessage(ChatMessage chatMsg)
@@ -717,14 +717,14 @@ public class GameNetworkManager : MonoBehaviour
         _cts?.Dispose();
 
         // 取消事件订阅
-        T2FGameSdk.Instance.OnStateChanged -= OnConnectionStateChanged;
-        T2FGameSdk.Instance.OnMessageReceived -= OnServerPush;
-        T2FGameSdk.Instance.OnError -= OnNetworkError;
+        PiscesSdk.Instance.OnStateChanged -= OnConnectionStateChanged;
+        PiscesSdk.Instance.OnMessageReceived -= OnServerPush;
+        PiscesSdk.Instance.OnError -= OnNetworkError;
 
         // 取消消息订阅（使用保存的 handler 引用）
         UnsubscribeMessages();
 
-        T2FGameSdk.Instance.Close();
+        PiscesSdk.Instance.Close();
     }
 
     // UI 相关方法（示意）
@@ -743,11 +743,11 @@ public class GameNetworkManager : MonoBehaviour
 
 ### 模块化架构
 
-T2FGameSdk 采用**职责分离**的三层管理器架构：
+PiscesSdk 采用**职责分离**的三层管理器架构：
 
 ```
 ┌────────────────────────────────────────────────────┐
-│              T2FGameSdk (主入口)                   │
+│              PiscesSdk (主入口)                   │
 │  - 单例模式                                        │
 │  - 初始化和生命周期管理                            │
 │  - 事件转发和协调                                  │
@@ -774,7 +774,7 @@ T2FGameSdk 采用**职责分离**的三层管理器架构：
 └─────────────────────────────────────────────┘
                      ↓
 ┌─────────────────────────────────────────────┐
-│         SDK 层（T2FGameSdk）                │
+│         SDK 层（PiscesSdk）                │
 │  ConnectionMgr + MessageRouter + RequestMgr │
 └─────────────────────────────────────────────┘
                      ↓
@@ -798,7 +798,7 @@ T2FGameSdk 采用**职责分离**的三层管理器架构：
 
 | 组件 | 职责 |
 |------|------|
-| **T2FGameSdk** | SDK 主入口，单例管理，提供高层 API |
+| **PiscesSdk** | SDK 主入口，单例管理，提供高层 API |
 | **ConnectionManager** | 连接管理、状态监控、自动重连 |
 | **MessageRouter** | 消息路由、订阅管理、高效分发 |
 | **RequestManager** | 请求发送、回调处理、超时管理 |
@@ -862,7 +862,7 @@ var options = new GameClientOptions
 **A**: SDK 默认开启自动重连，业务层只需监听状态变化：
 
 ```csharp
-T2FGameSdk.Instance.OnStateChanged += (state) =>
+PiscesSdk.Instance.OnStateChanged += (state) =>
 {
     if (state == ConnectionState.Connected)
     {
@@ -879,7 +879,7 @@ T2FGameSdk.Instance.OnStateChanged += (state) =>
 ```csharp
 var cts = new CancellationTokenSource();
 
-var task = T2FGameSdk.Instance.RequestAsync<MyResponse>(
+var task = PiscesSdk.Instance.RequestAsync<MyResponse>(
     cmdMerge: 1001,
     cancellationToken: cts.Token
 );
@@ -896,7 +896,7 @@ cts.Cancel();
 ```csharp
 try
 {
-    var response = await T2FGameSdk.Instance.RequestAsync(...);
+    var response = await PiscesSdk.Instance.RequestAsync(...);
 }
 catch (TimeoutException)
 {
@@ -917,7 +917,7 @@ catch (InvalidOperationException ex)
 **A**: 检查 `ResponseMessage.ResponseStatus`：
 
 ```csharp
-var response = await T2FGameSdk.Instance.RequestAsync<MyResponse>(...);
+var response = await PiscesSdk.Instance.RequestAsync<MyResponse>(...);
 
 if (response.ResponseStatus != 0)
 {

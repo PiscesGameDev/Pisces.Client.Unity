@@ -1,10 +1,10 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using T2FGame.Client.Protocol;
-using T2FGame.Protocol;
+using Pisces.Client.Protocol;
+using Pisces.Protocol;
 
-namespace T2FGame.Client.Network
+namespace Pisces.Client.Network
 {
     /// <summary>
     /// 数据包缓冲区（处理粘包/拆包）

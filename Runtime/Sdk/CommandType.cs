@@ -1,4 +1,4 @@
-namespace T2FGame.Client.Sdk
+namespace Pisces.Client.Sdk
 {
     /// <summary>
     /// 命令类型枚举

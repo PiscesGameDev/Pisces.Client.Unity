@@ -2,19 +2,19 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Google.Protobuf;
-using T2FGame.Client.Network;
-using T2FGame.Client.Utils;
-using T2FGame.Protocol;
+using Pisces.Client.Network;
+using Pisces.Client.Utils;
+using Pisces.Protocol;
 
-namespace T2FGame.Client.Sdk
+namespace Pisces.Client.Sdk
 {
     /// <summary>
     /// T2F 游戏 SDK 入口
     /// 提供高层次的 API 封装，简化游戏客户端的使用
     /// </summary>
-    public class T2FGameSdk : IDisposable
+    public class PiscesSdk : IDisposable
     {
-        private static T2FGameSdk _instance;
+        private static PiscesSdk _instance;
         private static readonly object _lock = new();
 
         // 三大核心管理器
@@ -28,13 +28,13 @@ namespace T2FGame.Client.Sdk
         /// <summary>
         /// 获取 SDK 单例实例
         /// </summary>
-        public static T2FGameSdk Instance
+        public static PiscesSdk Instance
         {
             get
             {
                 lock (_lock)
                 {
-                    return _instance ??= new T2FGameSdk();
+                    return _instance ??= new PiscesSdk();
                 }
             }
         }
@@ -74,7 +74,7 @@ namespace T2FGame.Client.Sdk
         /// </summary>
         public event Action<Exception> OnError;
 
-        private T2FGameSdk() { }
+        private PiscesSdk() { }
 
         #region 初始化和连接
 
@@ -85,7 +85,7 @@ namespace T2FGame.Client.Sdk
         public void Initialize(GameClientOptions options = null)
         {
             if (_disposed)
-                throw new ObjectDisposedException(nameof(T2FGameSdk));
+                throw new ObjectDisposedException(nameof(PiscesSdk));
 
             if (_initialized)
             {
@@ -404,7 +404,7 @@ namespace T2FGame.Client.Sdk
         private void EnsureInitialized()
         {
             if (_disposed)
-                throw new ObjectDisposedException(nameof(T2FGameSdk));
+                throw new ObjectDisposedException(nameof(PiscesSdk));
 
             if (!_initialized)
                 throw new InvalidOperationException("SDK 未初始化，请先调用 Initialize()");
@@ -471,7 +471,7 @@ namespace T2FGame.Client.Sdk
             }
         }
 
-        ~T2FGameSdk()
+        ~PiscesSdk()
         {
             Dispose(false);
         }

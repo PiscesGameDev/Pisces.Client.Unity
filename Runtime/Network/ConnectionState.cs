@@ -1,4 +1,4 @@
-namespace T2FGame.Client.Network
+namespace Pisces.Client.Network
 {
     /// <summary>
     /// 连接状态

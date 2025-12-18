@@ -1,7 +1,7 @@
 using System;
-using T2FGame.Client.Network.Channel;
+using Pisces.Client.Network.Channel;
 
-namespace T2FGame.Client.Network
+namespace Pisces.Client.Network
 {
     [Serializable]
     public sealed class GameClientOptions
@@ -9,7 +9,7 @@ namespace T2FGame.Client.Network
         /// <summary>
         /// 传输协议类型（默认 TCP）
         /// </summary>
-        public ChannelType ChannelType = ChannelType.Tcp;
+        public ChannelType ChannelType;
 
         /// <summary>
         /// 服务器地址
@@ -72,6 +72,7 @@ namespace T2FGame.Client.Network
         /// </summary>
         public bool EnableLog = true;
 
+        
         /// <summary>
         /// 是否使用工作线程进行网络收发
         ///

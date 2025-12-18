@@ -1,7 +1,7 @@
 using System;
 using Google.Protobuf;
 
-namespace T2FGame.Client.Protocol
+namespace Pisces.Client.Protocol
 {
     /// <summary>
     /// Protobuf 序列化器

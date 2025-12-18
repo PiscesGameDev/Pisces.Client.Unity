@@ -1,6 +1,6 @@
 using System.Threading;
 
-namespace T2FGame.Client.Sdk
+namespace Pisces.Client.Sdk
 {
     /// <summary>
     /// 消息ID管理器

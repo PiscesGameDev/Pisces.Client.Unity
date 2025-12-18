@@ -1,9 +1,9 @@
 using System;
 using Cysharp.Threading.Tasks;
-using T2FGame.Client.Network;
-using T2FGame.Client.Utils;
+using Pisces.Client.Network;
+using Pisces.Client.Utils;
 
-namespace T2FGame.Client.Sdk
+namespace Pisces.Client.Sdk
 {
     /// <summary>
     /// 连接管理器

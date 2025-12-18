@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using Google.Protobuf;
-using T2FGame.Client.Utils;
-using T2FGame.Protocol;
+using Pisces.Client.Utils;
+using Pisces.Protocol;
 
-namespace T2FGame.Client.Sdk
+namespace Pisces.Client.Sdk
 {
     /// <summary>
     /// 表示一个网络请求命令，用于封装客户端向服务器发送的消息。

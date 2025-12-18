@@ -1,7 +1,7 @@
 using System;
 using System.Net.Sockets;
 
-namespace T2FGame.Client.Network.Channel
+namespace Pisces.Client.Network.Channel
 {
     /// <summary>
     /// TCP 通道实现

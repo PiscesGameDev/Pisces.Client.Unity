@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace T2FGame.Client.Utils
+namespace Pisces.Client.Utils
 {
     internal sealed class DefaultLog : ILog
     {

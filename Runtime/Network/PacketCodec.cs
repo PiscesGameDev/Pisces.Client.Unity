@@ -1,9 +1,9 @@
 using System;
 using System.Buffers.Binary;
-using T2FGame.Client.Protocol;
-using T2FGame.Protocol;
+using Pisces.Client.Protocol;
+using Pisces.Protocol;
 
-namespace T2FGame.Client.Network
+namespace Pisces.Client.Network
 {
     /// <summary>
     /// 数据包编解码器

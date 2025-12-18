@@ -1,4 +1,4 @@
-namespace T2FGame.Client.Network.Channel
+namespace Pisces.Client.Network.Channel
 {
     /// <summary>
     /// 传输协议类型

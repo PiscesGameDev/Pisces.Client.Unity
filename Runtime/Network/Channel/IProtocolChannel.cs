@@ -1,6 +1,6 @@
 using System;
 
-namespace T2FGame.Client.Network.Channel
+namespace Pisces.Client.Network.Channel
 {
     /// <summary>
     ///  通信协议通道的接口
