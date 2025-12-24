@@ -1,3 +1,4 @@
+#if UNITY_WEBGL
 using System;
 using Pisces.Client.Utils;
 using UnityWebSocket;
@@ -271,3 +272,4 @@ namespace Pisces.Client.Network.Channel
         }
     }
 }
+#endif

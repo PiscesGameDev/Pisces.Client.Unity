@@ -12,6 +12,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.psygames.unitywebsocket",
+            "expression": "2.8.6",
+            "define": "UNITY_WEBGL"
+        }
+    ],
     "noEngineReferences": false
 }

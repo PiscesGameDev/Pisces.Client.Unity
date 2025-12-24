@@ -21,7 +21,9 @@ namespace Pisces.Client.Network.Channel
             {
                 ChannelType.Tcp => new TcpChannel(),
                 ChannelType.Udp => new UdpChannel(),
+#if UNITY_WEBGL
                 ChannelType.WebSocket => new WebSocketChannel(),
+#endif
                 _ => throw new ArgumentOutOfRangeException(
                     nameof(channelType),
                     channelType,
