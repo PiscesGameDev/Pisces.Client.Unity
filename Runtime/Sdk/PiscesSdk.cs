@@ -299,6 +299,21 @@ namespace Pisces.Client.Sdk
             _requestManager.Send(cmdMerge, request, callback);
         }
 
+        /// <summary>
+        /// 发送请求并在收到响应时执行回调（有请求体，原始响应）
+        /// </summary>
+        public void Send<TRequest>(
+            int cmdMerge,
+            TRequest request,
+            Action<ResponseMessage> callback
+        )
+            where TRequest : IMessage
+        {
+            if (!IsInitialized)
+                return;
+            _requestManager.Send(cmdMerge, request, callback);
+        }
+
         #endregion
 
         #region 消息订阅 (Subscribe)

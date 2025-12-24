@@ -127,7 +127,7 @@ namespace Pisces.Client.Sdk
             if (!_connectionManager.IsConnected)
                 return;
 
-            var command = RequestCommand.OfInt(cmdMerge, value);
+            var command = RequestCommand.Of(cmdMerge, value);
             _connectionManager.Client.SendRequest(command);
         }
 
@@ -139,7 +139,7 @@ namespace Pisces.Client.Sdk
             if (!_connectionManager.IsConnected)
                 return;
 
-            var command = RequestCommand.OfString(cmdMerge, value);
+            var command = RequestCommand.Of(cmdMerge, value);
             _connectionManager.Client.SendRequest(command);
         }
 
@@ -151,7 +151,7 @@ namespace Pisces.Client.Sdk
             if (!_connectionManager.IsConnected)
                 return;
 
-            var command = RequestCommand.OfLong(cmdMerge, value);
+            var command = RequestCommand.Of(cmdMerge, value);
             _connectionManager.Client.SendRequest(command);
         }
 
@@ -163,7 +163,7 @@ namespace Pisces.Client.Sdk
             if (!_connectionManager.IsConnected)
                 return;
 
-            var command = RequestCommand.OfBool(cmdMerge, value);
+            var command = RequestCommand.Of(cmdMerge, value);
             _connectionManager.Client.SendRequest(command);
         }
 
@@ -239,6 +239,31 @@ namespace Pisces.Client.Sdk
         }
 
         /// <summary>
+        /// 发送请求并在收到响应时执行回调（有请求体，原始响应）
+        /// </summary>
+        public void Send<TRequest>(
+            int cmdMerge,
+            TRequest request,
+            Action<ResponseMessage> callback
+        )
+            where TRequest : IMessage
+        {
+            if (!_connectionManager.IsConnected)
+            {
+                GameLogger.LogWarning("[RequestManager] 未连接，无法发送请求");
+                return;
+            }
+
+            if (callback == null)
+            {
+                Send(cmdMerge, request);
+                return;
+            }
+
+            SendWithCallbackAsync(cmdMerge, request, callback).Forget();
+        }
+
+        /// <summary>
         /// 内部异步发送并处理回调的方法（无请求体，原始响应）
         /// </summary>
         private async UniTaskVoid SendWithCallbackAsync(
@@ -293,6 +318,28 @@ namespace Pisces.Client.Sdk
             try
             {
                 var response = await RequestAsync<TRequest, TResponse>(cmdMerge, request);
+                callback?.Invoke(response);
+            }
+            catch (Exception ex)
+            {
+                GameLogger.LogError($"[RequestManager] 带回调的发送失败: {ex.Message}");
+                OnError?.Invoke(ex);
+            }
+        }
+
+        /// <summary>
+        /// 内部异步发送并处理回调的方法（有请求体，原始响应）
+        /// </summary>
+        private async UniTaskVoid SendWithCallbackAsync<TRequest>(
+            int cmdMerge,
+            TRequest request,
+            Action<ResponseMessage> callback
+        )
+            where TRequest : IMessage
+        {
+            try
+            {
+                var response = await RequestAsync(cmdMerge, request);
                 callback?.Invoke(response);
             }
             catch (Exception ex)

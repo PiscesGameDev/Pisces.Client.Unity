@@ -56,7 +56,7 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// IPoolable: 从池中取出时调用
         /// </summary>
-        public void OnSpawn() { } // 无需操作，Initialize 会设置所有属性
+        public void OnSpawn() { }
 
         /// <summary>
         /// IPoolable: 归还到池中时调用
@@ -89,7 +89,7 @@ namespace Pisces.Client.Sdk
         /// 创建一个新的请求命令实例，并指定其业务路由标识及 Protobuf 消息数据。
         /// 若传入的消息为空，则数据部分将被设为空字符串。
         /// </summary>
-        public static RequestCommand Of(int cmdMerge, IMessage message)
+        public static RequestCommand Of<T>(int cmdMerge, T message) where T : IMessage
         {
             var byteString = message?.ToByteString() ?? _emptyByteString;
             return Of(cmdMerge, byteString);
@@ -101,85 +101,165 @@ namespace Pisces.Client.Sdk
         /// </summary>
         public static RequestCommand Heartbeat() => Of(0, _emptyByteString, CommandType.Heartbeat);
 
+        #region 基础类型重载（利用隐式转换）
+
         /// <summary>
         /// 创建一个包含整型数值的请求命令实例。
+        /// 利用隐式转换 int → IntValue，简化调用。
         /// </summary>
-        public static RequestCommand OfInt(int cmdMerge, int data) =>
-            Of(cmdMerge, new IntValue { Value = data });
-
-        /// <summary>
-        /// 创建一个包含整型集合的请求命令实例。
-        /// </summary>
-        public static RequestCommand OfIntList(int cmdMerge, IEnumerable<int> data)
-        {
-            var message = new IntValueList();
-            if (data != null)
-                message.Values.AddRange(data);
-            return Of(cmdMerge, message);
-        }
-
-        /// <summary>
-        /// 创建一个包含整型数组的请求命令实例。
-        /// </summary>
-        public static RequestCommand OfIntArray(int cmdMerge, int[] data) =>
-            OfIntList(cmdMerge, data);
-
-        /// <summary>
-        /// 创建一个包含布尔值的请求命令实例。
-        /// </summary>
-        public static RequestCommand OfBool(int cmdMerge, bool data) =>
-            Of(cmdMerge, new BoolValue { Value = data });
-
-        /// <summary>
-        /// 创建一个包含布尔值列表的请求命令实例。
-        /// </summary>
-        public static RequestCommand OfBoolList(int cmdMerge, List<bool> data)
-        {
-            var message = new BoolValueList();
-            if (data != null)
-                message.Values.AddRange(data);
-            return Of(cmdMerge, message);
-        }
+        /// <example>RequestCommand.Of(cmdMerge, 100);</example>
+        public static RequestCommand Of(int cmdMerge, int data) => Of(cmdMerge, (IntValue)data);
 
         /// <summary>
         /// 创建一个包含字符串值的请求命令实例。
+        /// 利用隐式转换 string → StringValue，简化调用。
         /// </summary>
-        public static RequestCommand OfString(int cmdMerge, string data) =>
-            Of(cmdMerge, new StringValue { Value = data ?? string.Empty });
-
-        /// <summary>
-        /// 创建一个包含字符串集合的请求命令实例。
-        /// </summary>
-        public static RequestCommand OfStringList(int cmdMerge, IEnumerable<string> data)
-        {
-            var message = new StringValueList();
-            if (data != null)
-                message.Values.AddRange(data);
-            return Of(cmdMerge, message);
-        }
-
-        /// <summary>
-        /// 创建一个包含字符串数组的请求命令实例。
-        /// </summary>
-        public static RequestCommand OfStringArray(int cmdMerge, string[] data) =>
-            OfStringList(cmdMerge, data);
+        /// <example>RequestCommand.Of(cmdMerge, "hello");</example>
+        public static RequestCommand Of(int cmdMerge, string data) => Of(cmdMerge, (StringValue)data);
 
         /// <summary>
         /// 创建一个包含长整型数值的请求命令实例。
+        /// 利用隐式转换 long → LongValue，简化调用。
         /// </summary>
-        public static RequestCommand OfLong(int cmdMerge, long data) =>
-            Of(cmdMerge, new LongValue { Value = data });
+        /// <example>RequestCommand.Of(cmdMerge, 999L);</example>
+        public static RequestCommand Of(int cmdMerge, long data) => Of(cmdMerge, (LongValue)data);
 
         /// <summary>
-        /// 创建一个包含长整型集合的请求命令实例。
+        /// 创建一个包含布尔值的请求命令实例。
+        /// 利用隐式转换 bool → BoolValue，简化调用。
         /// </summary>
-        public static RequestCommand OfLongList(int cmdMerge, IEnumerable<long> data)
-        {
-            var message = new LongValueList();
-            if (data != null)
-                message.Values.AddRange(data);
-            return Of(cmdMerge, message);
-        }
+        /// <example>RequestCommand.Of(cmdMerge, true);</example>
+        public static RequestCommand Of(int cmdMerge, bool data) => Of(cmdMerge, (BoolValue)data);
+
+        /// <summary>
+        /// 创建一个包含 Vector2 的请求命令实例。
+        /// 利用隐式转换 UnityEngine.Vector2 → Vector2，简化调用。
+        /// </summary>
+        /// <example>RequestCommand.Of(cmdMerge, new Vector2(1, 2));</example>
+        public static RequestCommand Of(int cmdMerge, UnityEngine.Vector2 data) => Of(cmdMerge, (Vector2)data);
+
+        /// <summary>
+        /// 创建一个包含 Vector2Int 的请求命令实例。
+        /// 利用隐式转换 UnityEngine.Vector2Int → Vector2Int，简化调用。
+        /// </summary>
+        public static RequestCommand Of(int cmdMerge, UnityEngine.Vector2Int data) => Of(cmdMerge, (Vector2Int)data);
+
+        /// <summary>
+        /// 创建一个包含 Vector3 的请求命令实例。
+        /// 利用隐式转换 UnityEngine.Vector3 → Vector3，简化调用。
+        /// </summary>
+        /// <example>RequestCommand.Of(cmdMerge, transform.position);</example>
+        public static RequestCommand Of(int cmdMerge, UnityEngine.Vector3 data) => Of(cmdMerge, (Vector3)data);
+
+        /// <summary>
+        /// 创建一个包含 Vector3Int 的请求命令实例。
+        /// 利用隐式转换 UnityEngine.Vector3Int → Vector3Int，简化调用。
+        /// </summary>
+        public static RequestCommand Of(int cmdMerge, UnityEngine.Vector3Int data) => Of(cmdMerge, (Vector3Int)data);
+
+        #endregion
+
+        #region 列表类型重载（利用隐式转换）
+
+        /// <summary>
+        /// 创建一个包含整型列表的请求命令实例。
+        /// 利用隐式转换 int[] → IntValueList，简化调用。
+        /// </summary>
+        /// <example>RequestCommand.Of(cmdMerge, new int[] { 1, 2, 3 });</example>
+        public static RequestCommand Of(int cmdMerge, int[] data) => Of(cmdMerge, (IntValueList)data);
+
+        /// <summary>
+        /// 创建一个包含整型列表的请求命令实例。
+        /// 利用隐式转换 List&lt;int&gt; → IntValueList，简化调用。
+        /// </summary>
+        /// <example>RequestCommand.Of(cmdMerge, myIntList);</example>
+        public static RequestCommand Of(int cmdMerge, List<int> data) => Of(cmdMerge, (IntValueList)data);
+
+        /// <summary>
+        /// 创建一个包含长整型列表的请求命令实例。
+        /// 利用隐式转换 long[] → LongValueList，简化调用。
+        /// </summary>
+        public static RequestCommand Of(int cmdMerge, long[] data) => Of(cmdMerge, (LongValueList)data);
+
+        /// <summary>
+        /// 创建一个包含长整型列表的请求命令实例。
+        /// 利用隐式转换 List&lt;long&gt; → LongValueList，简化调用。
+        /// </summary>
+        public static RequestCommand Of(int cmdMerge, List<long> data) => Of(cmdMerge, (LongValueList)data);
+
+        /// <summary>
+        /// 创建一个包含字符串列表的请求命令实例。
+        /// 利用隐式转换 string[] → StringValueList，简化调用。
+        /// </summary>
+        public static RequestCommand Of(int cmdMerge, string[] data) => Of(cmdMerge, (StringValueList)data);
+
+        /// <summary>
+        /// 创建一个包含字符串列表的请求命令实例。
+        /// 利用隐式转换 List&lt;string&gt; → StringValueList，简化调用。
+        /// </summary>
+        public static RequestCommand Of(int cmdMerge, List<string> data) => Of(cmdMerge, (StringValueList)data);
+
+        /// <summary>
+        /// 创建一个包含布尔值列表的请求命令实例。
+        /// 利用隐式转换 bool[] → BoolValueList，简化调用。
+        /// </summary>
+        public static RequestCommand Of(int cmdMerge, bool[] data) => Of(cmdMerge, (BoolValueList)data);
+
+        /// <summary>
+        /// 创建一个包含布尔值列表的请求命令实例。
+        /// 利用隐式转换 List&lt;bool&gt; → BoolValueList，简化调用。
+        /// </summary>
+        public static RequestCommand Of(int cmdMerge, List<bool> data) => Of(cmdMerge, (BoolValueList)data);
+
+        /// <summary>
+        /// 创建一个包含 Vector2 列表的请求命令实例。
+        /// 利用隐式转换 Vector2[] → Vector2List，简化调用。
+        /// </summary>
+        public static RequestCommand Of(int cmdMerge, UnityEngine.Vector2[] data) => Of(cmdMerge, (Vector2List)data);
+
+        /// <summary>
+        /// 创建一个包含 Vector2 列表的请求命令实例。
+        /// 利用隐式转换 List&lt;Vector2&gt; → Vector2List，简化调用。
+        /// </summary>
+        public static RequestCommand Of(int cmdMerge, List<UnityEngine.Vector2> data) => Of(cmdMerge, (Vector2List)data);
+
+        /// <summary>
+        /// 创建一个包含 Vector2Int 列表的请求命令实例。
+        /// 利用隐式转换 Vector2Int[] → Vector2IntList，简化调用。
+        /// </summary>
+        public static RequestCommand Of(int cmdMerge, UnityEngine.Vector2Int[] data) => Of(cmdMerge, (Vector2IntList)data);
+
+        /// <summary>
+        /// 创建一个包含 Vector2Int 列表的请求命令实例。
+        /// 利用隐式转换 List&lt;Vector2Int&gt; → Vector2IntList，简化调用。
+        /// </summary>
+        public static RequestCommand Of(int cmdMerge, List<UnityEngine.Vector2Int> data) => Of(cmdMerge, (Vector2IntList)data);
+
+        /// <summary>
+        /// 创建一个包含 Vector3 列表的请求命令实例。
+        /// 利用隐式转换 Vector3[] → Vector3List，简化调用。
+        /// </summary>
+        public static RequestCommand Of(int cmdMerge, UnityEngine.Vector3[] data) => Of(cmdMerge, (Vector3List)data);
+
+        /// <summary>
+        /// 创建一个包含 Vector3 列表的请求命令实例。
+        /// 利用隐式转换 List&lt;Vector3&gt; → Vector3List，简化调用。
+        /// </summary>
+        public static RequestCommand Of(int cmdMerge, List<UnityEngine.Vector3> data) => Of(cmdMerge, (Vector3List)data);
+
+        /// <summary>
+        /// 创建一个包含 Vector3Int 列表的请求命令实例。
+        /// 利用隐式转换 Vector3Int[] → Vector3IntList，简化调用。
+        /// </summary>
+        public static RequestCommand Of(int cmdMerge, UnityEngine.Vector3Int[] data) => Of(cmdMerge, (Vector3IntList)data);
+
+        /// <summary>
+        /// 创建一个包含 Vector3Int 列表的请求命令实例。
+        /// 利用隐式转换 List&lt;Vector3Int&gt; → Vector3IntList，简化调用。
+        /// </summary>
+        public static RequestCommand Of(int cmdMerge, List<UnityEngine.Vector3Int> data) => Of(cmdMerge, (Vector3IntList)data);
+
+        #endregion
         #endregion
     }
 }
