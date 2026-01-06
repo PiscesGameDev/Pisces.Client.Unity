@@ -89,7 +89,7 @@ namespace Pisces.Client.Sdk
 
             if (_initialized)
             {
-                GameLogger.LogWarning("[T2FGameSdk] SDK 已初始化，跳过");
+                GameLogger.LogWarning("[PiscesSdk] SDK 已初始化，跳过");
                 return;
             }
 
@@ -108,7 +108,7 @@ namespace Pisces.Client.Sdk
             _requestManager.OnError += HandleError;
 
             _initialized = true;
-            GameLogger.Log("[T2FGameSdk] SDK 初始化完成");
+            GameLogger.Log("[PiscesSdk] SDK 初始化完成");
         }
 
         /// <summary>
@@ -390,7 +390,7 @@ namespace Pisces.Client.Sdk
             }
             catch (Exception ex)
             {
-                GameLogger.LogError($"[T2FGameSdk] 消息分发错误: {ex.Message}");
+                GameLogger.LogError($"[PiscesSdk] 消息分发错误: {ex.Message}");
                 OnError?.Invoke(ex);
             }
         }
@@ -459,7 +459,7 @@ namespace Pisces.Client.Sdk
                 _initialized = false;
             }
 
-            GameLogger.Log("[T2FGameSdk] SDK 已释放");
+            GameLogger.Log("[PiscesSdk] SDK 已释放");
         }
 
         /// <summary>
