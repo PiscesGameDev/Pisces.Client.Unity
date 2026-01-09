@@ -16,7 +16,7 @@
         {
             "name": "com.psygames.unitywebsocket",
             "expression": "2.8.6",
-            "define": "UNITY_WEBGL"
+            "define": "ENABLE_WEBSOCKET"
         }
     ],
     "noEngineReferences": false

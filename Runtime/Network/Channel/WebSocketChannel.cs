@@ -1,4 +1,4 @@
-#if UNITY_WEBGL
+#if ENABLE_WEBSOCKET
 using System;
 using Pisces.Client.Utils;
 using UnityWebSocket;

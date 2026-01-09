@@ -211,14 +211,26 @@ map.ToDictionary(result);  // 反向转换
 | Android/iOS | ✅ | ✅ | ✅ | TCP |
 | **WebGL** | ❌ | ❌ | ✅ | **WebSocket** |
 
+### 启用 WebSocket
+
+WebSocket 功能通过 `ENABLE_WEBSOCKET` 编译符号控制，**默认不启用**。
+
+**启用步骤：**
+1. 打开 **Edit → Project Settings → Player**
+2. 找到 **Scripting Define Symbols**
+3. 添加 `ENABLE_WEBSOCKET`
+
+> 💡 **为什么需要编译符号？**  
+> 在使用TCP/UDP 时,请移除`ENABLE_WEBSOCKET`,避免将 UnityWebSocket 依赖打包。
+
 ```csharp
-#if UNITY_WEBGL
+// WebSocket 连接示例
 var options = new GameClientOptions
 {
     ChannelType = ChannelType.WebSocket,
-    Host = "wss://game.server.com"
+    Host = "wss://game.server.com",  // 或 ws://
+    Port = 443
 };
-#endif
 ```
 
 ---
