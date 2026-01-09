@@ -116,7 +116,8 @@ namespace Pisces.Protocol
     #endregion
 
     #region List Extensions
-
+    
+    
     /// <summary>
     /// IntValueList 扩展，提供 List&lt;int&gt; 与 IntValueList 之间的隐式转换
     /// </summary>
@@ -151,6 +152,25 @@ namespace Pisces.Protocol
         {
             if (wrapper?.Values == null) return new List<int>();
             return new List<int>(wrapper.Values);
+        }
+
+        /// <summary>
+        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
+        /// </summary>
+        /// <param name="result">用于存储结果的 List，会先清空再填充</param>
+        /// <example>
+        /// // 高频调用场景，避免 GC
+        /// private List&lt;int&gt; _cachedScores = new List&lt;int&gt;(100);
+        ///
+        /// void OnScoreSync(IntValueList scoreData)
+        /// {
+        ///     scoreData.ToList(_cachedScores);
+        ///     // 使用 _cachedScores
+        /// }
+        /// </example>
+        public void ToList(List<int> result)
+        {
+            CollectionConvertHelper.ToList(Values, result);
         }
     }
 
@@ -189,6 +209,15 @@ namespace Pisces.Protocol
             if (wrapper?.Values == null) return new List<long>();
             return new List<long>(wrapper.Values);
         }
+
+        /// <summary>
+        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
+        /// </summary>
+        /// <param name="result">用于存储结果的 List，会先清空再填充</param>
+        public void ToList(List<long> result)
+        {
+            CollectionConvertHelper.ToList(Values, result);
+        }
     }
 
     /// <summary>
@@ -225,6 +254,15 @@ namespace Pisces.Protocol
         {
             if (wrapper?.Values == null) return new List<string>();
             return new List<string>(wrapper.Values);
+        }
+
+        /// <summary>
+        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
+        /// </summary>
+        /// <param name="result">用于存储结果的 List，会先清空再填充</param>
+        public void ToList(List<string> result)
+        {
+            CollectionConvertHelper.ToList(Values, result);
         }
     }
 
@@ -263,6 +301,15 @@ namespace Pisces.Protocol
             if (wrapper?.Values == null) return new List<bool>();
             return new List<bool>(wrapper.Values);
         }
+
+        /// <summary>
+        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
+        /// </summary>
+        /// <param name="result">用于存储结果的 List，会先清空再填充</param>
+        public void ToList(List<bool> result)
+        {
+            CollectionConvertHelper.ToList(Values, result);
+        }
     }
 
     /// <summary>
@@ -282,12 +329,10 @@ namespace Pisces.Protocol
             var list = new ByteValueList();
             if (messages != null)
             {
-                foreach (var message in messages)
+                var count = messages.Count;
+                for (var i = 0; i < count; i++)
                 {
-                    if (message != null)
-                    {
-                        list.Values.Add(message.ToByteString());
-                    }
+                    list.Values.Add(messages[i].ToByteString());
                 }
             }
             return list;
@@ -377,6 +422,37 @@ namespace Pisces.Protocol
                 }
             }
             return result;
+        }
+
+        /// <summary>
+        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
+        /// </summary>
+        /// <typeparam name="T">Protobuf 消息类型</typeparam>
+        /// <param name="result">用于存储结果的 List，会先清空再填充</param>
+        /// <example>
+        /// // 高频调用场景，避免 GC
+        /// private List&lt;PlayerInfo&gt; _cachedPlayers = new List&lt;PlayerInfo&gt;(100);
+        ///
+        /// void OnNetworkSync(ByteValueList data)
+        /// {
+        ///     data.ToList(_cachedPlayers);
+        ///     // 使用 _cachedPlayers
+        /// }
+        /// </example>
+        public void ToList<T>(List<T> result) where T : IMessage, new()
+        {
+            CollectionConvertHelper.DeserializeToList(Values, result);
+        }
+
+        /// <summary>
+        /// 转换为 List（no-GC 版本，使用 MessageParser，性能更优）
+        /// </summary>
+        /// <typeparam name="T">Protobuf 消息类型</typeparam>
+        /// <param name="result">用于存储结果的 List，会先清空再填充</param>
+        /// <param name="parser">消息解析器</param>
+        public void ToList<T>(List<T> result, MessageParser<T> parser) where T : IMessage<T>
+        {
+            CollectionConvertHelper.DeserializeToList(Values, result, parser);
         }
 
         /// <summary>
@@ -498,6 +574,27 @@ namespace Pisces.Protocol
             }
             return result;
         }
+
+        /// <summary>
+        /// 转换为 Dictionary（no-GC 版本，复用传入的 Dictionary 对象）
+        /// </summary>
+        /// <typeparam name="T">Protobuf 消息类型</typeparam>
+        /// <param name="result">用于存储结果的 Dictionary，会先清空再填充</param>
+        public void ToDictionary<T>(Dictionary<int, T> result) where T : IMessage, new()
+        {
+            CollectionConvertHelper.DeserializeToDictionary(Entries, result, e => e.Key, e => e.Value);
+        }
+
+        /// <summary>
+        /// 转换为 Dictionary（no-GC 版本，使用 MessageParser，性能更优）
+        /// </summary>
+        /// <typeparam name="T">Protobuf 消息类型</typeparam>
+        /// <param name="result">用于存储结果的 Dictionary，会先清空再填充</param>
+        /// <param name="parser">消息解析器</param>
+        public void ToDictionary<T>(Dictionary<int, T> result, MessageParser<T> parser) where T : IMessage<T>
+        {
+            CollectionConvertHelper.DeserializeToDictionary(Entries, result, e => e.Key, e => e.Value, parser);
+        }
     }
 
     /// <summary>
@@ -582,6 +679,27 @@ namespace Pisces.Protocol
             }
             return result;
         }
+
+        /// <summary>
+        /// 转换为 Dictionary（no-GC 版本，复用传入的 Dictionary 对象）
+        /// </summary>
+        /// <typeparam name="T">Protobuf 消息类型</typeparam>
+        /// <param name="result">用于存储结果的 Dictionary，会先清空再填充</param>
+        public void ToDictionary<T>(Dictionary<long, T> result) where T : IMessage, new()
+        {
+            CollectionConvertHelper.DeserializeToDictionary(Entries, result, e => e.Key, e => e.Value);
+        }
+
+        /// <summary>
+        /// 转换为 Dictionary（no-GC 版本，使用 MessageParser，性能更优）
+        /// </summary>
+        /// <typeparam name="T">Protobuf 消息类型</typeparam>
+        /// <param name="result">用于存储结果的 Dictionary，会先清空再填充</param>
+        /// <param name="parser">消息解析器</param>
+        public void ToDictionary<T>(Dictionary<long, T> result, MessageParser<T> parser) where T : IMessage<T>
+        {
+            CollectionConvertHelper.DeserializeToDictionary(Entries, result, e => e.Key, e => e.Value, parser);
+        }
     }
 
     /// <summary>
@@ -665,6 +783,27 @@ namespace Pisces.Protocol
                 }
             }
             return result;
+        }
+
+        /// <summary>
+        /// 转换为 Dictionary（no-GC 版本，复用传入的 Dictionary 对象）
+        /// </summary>
+        /// <typeparam name="T">Protobuf 消息类型</typeparam>
+        /// <param name="result">用于存储结果的 Dictionary，会先清空再填充</param>
+        public void ToDictionary<T>(Dictionary<string, T> result) where T : IMessage, new()
+        {
+            CollectionConvertHelper.DeserializeToDictionary(Entries, result, e => e.Key, e => e.Value);
+        }
+
+        /// <summary>
+        /// 转换为 Dictionary（no-GC 版本，使用 MessageParser，性能更优）
+        /// </summary>
+        /// <typeparam name="T">Protobuf 消息类型</typeparam>
+        /// <param name="result">用于存储结果的 Dictionary，会先清空再填充</param>
+        /// <param name="parser">消息解析器</param>
+        public void ToDictionary<T>(Dictionary<string, T> result, MessageParser<T> parser) where T : IMessage<T>
+        {
+            CollectionConvertHelper.DeserializeToDictionary(Entries, result, e => e.Key, e => e.Value, parser);
         }
     }
 
@@ -820,6 +959,39 @@ namespace Pisces.Protocol
             }
             return result;
         }
+
+        /// <summary>
+        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
+        /// </summary>
+        /// <param name="result">用于存储结果的 List，会先清空再填充</param>
+        /// <example>
+        /// // 高频调用场景，避免 GC
+        /// private List&lt;UnityEngine.Vector2&gt; _cachedList = new List&lt;UnityEngine.Vector2&gt;(100);
+        ///
+        /// void Update()
+        /// {
+        ///     vector2List.ToList(_cachedList);
+        ///     // 使用 _cachedList
+        /// }
+        /// </example>
+        public void ToList(List<UnityEngine.Vector2> result)
+        {
+            if (result == null) return;
+
+            result.Clear();
+            if (Values == null) return;
+
+            if (result.Capacity < Values.Count)
+            {
+                result.Capacity = Values.Count;
+            }
+
+            for (int i = 0; i < Values.Count; i++)
+            {
+                var v = Values[i];
+                result.Add(new UnityEngine.Vector2(v.X, v.Y));
+            }
+        }
     }
 
     /// <summary>
@@ -873,6 +1045,28 @@ namespace Pisces.Protocol
                 result.Add(new UnityEngine.Vector2Int(v.X, v.Y));
             }
             return result;
+        }
+
+        /// <summary>
+        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
+        /// </summary>
+        public void ToList(List<UnityEngine.Vector2Int> result)
+        {
+            if (result == null) return;
+
+            result.Clear();
+            if (Values == null) return;
+
+            if (result.Capacity < Values.Count)
+            {
+                result.Capacity = Values.Count;
+            }
+
+            for (int i = 0; i < Values.Count; i++)
+            {
+                var v = Values[i];
+                result.Add(new UnityEngine.Vector2Int(v.X, v.Y));
+            }
         }
     }
 
@@ -928,6 +1122,28 @@ namespace Pisces.Protocol
             }
             return result;
         }
+
+        /// <summary>
+        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
+        /// </summary>
+        public void ToList(List<UnityEngine.Vector3> result)
+        {
+            if (result == null) return;
+
+            result.Clear();
+            if (Values == null) return;
+
+            if (result.Capacity < Values.Count)
+            {
+                result.Capacity = Values.Count;
+            }
+
+            for (int i = 0; i < Values.Count; i++)
+            {
+                var v = Values[i];
+                result.Add(new UnityEngine.Vector3(v.X, v.Y, v.Z));
+            }
+        }
     }
 
     /// <summary>
@@ -981,6 +1197,28 @@ namespace Pisces.Protocol
                 result.Add(new UnityEngine.Vector3Int(v.X, v.Y, v.Z));
             }
             return result;
+        }
+
+        /// <summary>
+        /// 转换为 List（no-GC 版本，复用传入的 List 对象）
+        /// </summary>
+        public void ToList(List<UnityEngine.Vector3Int> result)
+        {
+            if (result == null) return;
+
+            result.Clear();
+            if (Values == null) return;
+
+            if (result.Capacity < Values.Count)
+            {
+                result.Capacity = Values.Count;
+            }
+
+            for (int i = 0; i < Values.Count; i++)
+            {
+                var v = Values[i];
+                result.Add(new UnityEngine.Vector3Int(v.X, v.Y, v.Z));
+            }
         }
     }
 
