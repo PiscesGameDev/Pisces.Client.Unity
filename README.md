@@ -760,10 +760,10 @@ SDK 为 Protobuf 的基础类型包装器提供了隐式转换支持，大幅简
 - `Vector2Int` ↔ `UnityEngine.Vector2Int`
 - `Vector3` ↔ `UnityEngine.Vector3`
 - `Vector3Int` ↔ `UnityEngine.Vector3Int`
-- `Vector2List` ↔ `List<UnityEngine.Vector2>` / `Vector2[]`
-- `Vector2IntList` ↔ `List<UnityEngine.Vector2Int>` / `Vector2Int[]`
-- `Vector3List` ↔ `List<UnityEngine.Vector3>` / `Vector3[]`
-- `Vector3IntList` ↔ `List<UnityEngine.Vector3Int>` / `Vector3Int[]`
+- `Vector2List` ↔ `List<UnityEngine.Vector2>`
+- `Vector2IntList` ↔ `List<UnityEngine.Vector2Int>`
+- `Vector3List` ↔ `List<UnityEngine.Vector3>`
+- `Vector3IntList` ↔ `List<UnityEngine.Vector3Int>`
 
 **使用示例**：
 
@@ -821,6 +821,34 @@ List<UnityEngine.Vector3> posList = positions;             // Vector3List → Li
 - 无额外内存开销
 - 推荐在所有场景中使用
 
+### 泛型列表转换（使用 From 方法）
+
+与字典类型相同，泛型列表使用静态 `From<T>()` 方法进行转换。
+
+**支持的类型**：
+- `ByteValueList.From<T>(List<T>)` ← Protobuf 消息列表
+
+**使用示例**：
+
+```csharp
+// 创建消息列表
+var enemies = new List<EnemyData>
+{
+    new EnemyData { Id = 1, Name = "哥布林" },
+    new EnemyData { Id = 2, Name = "史莱姆" }
+};
+
+// 转换为 Protobuf ByteValueList 类型
+var list = ByteValueList.From(enemies);
+
+// 直接用于请求
+PiscesSdk.Instance.Send(cmdMerge, ByteValueList.From(enemies));
+
+// 反向转换：从 ByteValueList 提取到列表（复用容器）
+var result = new List<EnemyData>();
+list.ToList(result);
+```
+
 ### 字典类型转换（使用 From 方法）
 
 由于 C# 隐式转换操作符不支持泛型参数，字典类型使用静态 `From<T>()` 方法进行转换。
@@ -829,6 +857,7 @@ List<UnityEngine.Vector3> posList = positions;             // Vector3List → Li
 - `IntKeyMap.From<T>(Dictionary<int, T>)` ← int 键字典
 - `LongKeyMap.From<T>(Dictionary<long, T>)` ← long 键字典
 - `StringKeyMap.From<T>(Dictionary<string, T>)` ← string 键字典
+- `ByteValueMap.From<T>(Dictionary<ByteString, T>)` ← ByteString 键字典
 
 **使用示例**：
 
