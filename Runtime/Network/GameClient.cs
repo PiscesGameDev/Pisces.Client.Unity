@@ -232,7 +232,7 @@ namespace Pisces.Client.Network
 
             // 注册等待响应
             if (
-                command.CommandType == CommandType.Business
+                command.MessageType == MessageType.Business
                 && !_pendingRequests.TryAdd(command.MsgId, tcs)
             )
             {
@@ -293,7 +293,7 @@ namespace Pisces.Client.Network
         {
             return new ExternalMessage
             {
-                CmdCode = (int)command.CommandType,
+                MessageType = command.MessageType,
                 CmdMerge = command.CmdMerge,
                 MsgId = command.MsgId,
                 Data = command.Data,
@@ -329,12 +329,16 @@ namespace Pisces.Client.Network
                 return;
 
             // 判断是心跳响应还是业务消息
-            if (message.CmdCode == (int)CommandType.Heartbeat)
+            if (message.MessageType == MessageType.Heartbeat)
             {
                 // 心跳响应，重置超时计数
                 _heartbeatTimeoutCount = 0;
                 GameLogger.Log("[GameClient] 收到心跳响应");
                 return;
+            }
+            else if (message.MessageType == MessageType.Disconnect)
+            {
+                // TODO：断线处理
             }
 
             // 创建响应消息

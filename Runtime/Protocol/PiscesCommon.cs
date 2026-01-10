@@ -24,44 +24,56 @@ namespace Pisces.Protocol {
     static PiscesCommonReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChNwaXNjZXNfY29tbW9uLnByb3RvEg9waXNjZXMucHJvdG9jb2wijAIKD0V4",
-            "dGVybmFsTWVzc2FnZRIQCghjbWRfY29kZRgBIAEoBRIXCg9wcm90b2NvbF9z",
-            "d2l0Y2gYAiABKAUSEQoJY21kX21lcmdlGAMgASgFEhcKD3Jlc3BvbnNlX3N0",
-            "YXR1cxgEIAEoBRIRCgl2YWxpZF9tc2cYBSABKAkSDAoEZGF0YRgGIAEoDBIO",
-            "CgZtc2dfaWQYByABKAUSQAoIbWV0YWRhdGEYCCADKAsyLi5waXNjZXMucHJv",
-            "dG9jb2wuRXh0ZXJuYWxNZXNzYWdlLk1ldGFkYXRhRW50cnkaLwoNTWV0YWRh",
-            "dGFFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIiUKEEhl",
-            "YXJ0YmVhdE1lc3NhZ2USEQoJdGltZXN0YW1wGAEgASgDIhkKCEludFZhbHVl",
-            "Eg0KBXZhbHVlGAEgASgFIhoKCUxvbmdWYWx1ZRINCgV2YWx1ZRgBIAEoAyIc",
-            "CgtTdHJpbmdWYWx1ZRINCgV2YWx1ZRgBIAEoCSIaCglCb29sVmFsdWUSDQoF",
-            "dmFsdWUYASABKAgiHgoMSW50VmFsdWVMaXN0Eg4KBnZhbHVlcxgBIAMoBSIf",
-            "Cg1Mb25nVmFsdWVMaXN0Eg4KBnZhbHVlcxgBIAMoAyIhCg9TdHJpbmdWYWx1",
-            "ZUxpc3QSDgoGdmFsdWVzGAEgAygJIh8KDUJvb2xWYWx1ZUxpc3QSDgoGdmFs",
-            "dWVzGAEgAygIIh8KDUJ5dGVWYWx1ZUxpc3QSDgoGdmFsdWVzGAEgAygMIh8K",
-            "B1ZlY3RvcjISCQoBeBgBIAEoAhIJCgF5GAIgASgCIiIKClZlY3RvcjJJbnQS",
-            "CQoBeBgBIAEoBRIJCgF5GAIgASgFIioKB1ZlY3RvcjMSCQoBeBgBIAEoAhIJ",
-            "CgF5GAIgASgCEgkKAXoYAyABKAIiLQoKVmVjdG9yM0ludBIJCgF4GAEgASgF",
-            "EgkKAXkYAiABKAUSCQoBehgDIAEoBSI3CgtWZWN0b3IyTGlzdBIoCgZ2YWx1",
-            "ZXMYASADKAsyGC5waXNjZXMucHJvdG9jb2wuVmVjdG9yMiI9Cg5WZWN0b3Iy",
+            "ChNwaXNjZXNfY29tbW9uLnByb3RvEg9waXNjZXMucHJvdG9jb2wiigEKEERp",
+            "c2Nvbm5lY3ROb3RpZnkSMQoGcmVhc29uGAEgASgOMiEucGlzY2VzLnByb3Rv",
+            "Y29sLkRpc2Nvbm5lY3RSZWFzb24SDwoHbWVzc2FnZRgCIAEoCRIfChdlc3Rp",
+            "bWF0ZWRfcmVjb3ZlcnlfdGltZRgDIAEoAxIRCgl0aW1lc3RhbXAYBCABKAMi",
+            "uwEKD0V4dGVybmFsTWVzc2FnZRIyCgxtZXNzYWdlX3R5cGUYASABKA4yHC5w",
+            "aXNjZXMucHJvdG9jb2wuTWVzc2FnZVR5cGUSFwoPcHJvdG9jb2xfc3dpdGNo",
+            "GAIgASgFEhEKCWNtZF9tZXJnZRgDIAEoBRIXCg9yZXNwb25zZV9zdGF0dXMY",
+            "BCABKAUSEQoJdmFsaWRfbXNnGAUgASgJEgwKBGRhdGEYBiABKAwSDgoGbXNn",
+            "X2lkGAcgASgFIiUKEEhlYXJ0YmVhdE1lc3NhZ2USEQoJdGltZXN0YW1wGAEg",
+            "ASgDIhkKCEludFZhbHVlEg0KBXZhbHVlGAEgASgFIhoKCUxvbmdWYWx1ZRIN",
+            "CgV2YWx1ZRgBIAEoAyIcCgtTdHJpbmdWYWx1ZRINCgV2YWx1ZRgBIAEoCSIa",
+            "CglCb29sVmFsdWUSDQoFdmFsdWUYASABKAgiHgoMSW50VmFsdWVMaXN0Eg4K",
+            "BnZhbHVlcxgBIAMoBSIfCg1Mb25nVmFsdWVMaXN0Eg4KBnZhbHVlcxgBIAMo",
+            "AyIhCg9TdHJpbmdWYWx1ZUxpc3QSDgoGdmFsdWVzGAEgAygJIh8KDUJvb2xW",
+            "YWx1ZUxpc3QSDgoGdmFsdWVzGAEgAygIIh8KDUJ5dGVWYWx1ZUxpc3QSDgoG",
+            "dmFsdWVzGAEgAygMIh8KB1ZlY3RvcjISCQoBeBgBIAEoAhIJCgF5GAIgASgC",
+            "IiIKClZlY3RvcjJJbnQSCQoBeBgBIAEoBRIJCgF5GAIgASgFIioKB1ZlY3Rv",
+            "cjMSCQoBeBgBIAEoAhIJCgF5GAIgASgCEgkKAXoYAyABKAIiLQoKVmVjdG9y",
+            "M0ludBIJCgF4GAEgASgFEgkKAXkYAiABKAUSCQoBehgDIAEoBSI3CgtWZWN0",
+            "b3IyTGlzdBIoCgZ2YWx1ZXMYASADKAsyGC5waXNjZXMucHJvdG9jb2wuVmVj",
+            "dG9yMiI9Cg5WZWN0b3IySW50TGlzdBIrCgZ2YWx1ZXMYASADKAsyGy5waXNj",
+            "ZXMucHJvdG9jb2wuVmVjdG9yMkludCI3CgtWZWN0b3IzTGlzdBIoCgZ2YWx1",
+            "ZXMYASADKAsyGC5waXNjZXMucHJvdG9jb2wuVmVjdG9yMyI9Cg5WZWN0b3Iz",
             "SW50TGlzdBIrCgZ2YWx1ZXMYASADKAsyGy5waXNjZXMucHJvdG9jb2wuVmVj",
-            "dG9yMkludCI3CgtWZWN0b3IzTGlzdBIoCgZ2YWx1ZXMYASADKAsyGC5waXNj",
-            "ZXMucHJvdG9jb2wuVmVjdG9yMyI9Cg5WZWN0b3IzSW50TGlzdBIrCgZ2YWx1",
-            "ZXMYASADKAsyGy5waXNjZXMucHJvdG9jb2wuVmVjdG9yM0ludCIsCg5CeXRl",
-            "VmFsdWVFbnRyeRILCgNrZXkYASABKAwSDQoFdmFsdWUYAiABKAwiQAoMQnl0",
-            "ZVZhbHVlTWFwEjAKB2VudHJpZXMYASADKAsyHy5waXNjZXMucHJvdG9jb2wu",
-            "Qnl0ZVZhbHVlRW50cnkiKQoLSW50S2V5RW50cnkSCwoDa2V5GAEgASgFEg0K",
-            "BXZhbHVlGAIgASgMIjoKCUludEtleU1hcBItCgdlbnRyaWVzGAEgAygLMhwu",
-            "cGlzY2VzLnByb3RvY29sLkludEtleUVudHJ5IioKDExvbmdLZXlFbnRyeRIL",
-            "CgNrZXkYASABKAMSDQoFdmFsdWUYAiABKAwiPAoKTG9uZ0tleU1hcBIuCgdl",
-            "bnRyaWVzGAEgAygLMh0ucGlzY2VzLnByb3RvY29sLkxvbmdLZXlFbnRyeSIs",
-            "Cg5TdHJpbmdLZXlFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAwi",
-            "QAoMU3RyaW5nS2V5TWFwEjAKB2VudHJpZXMYASADKAsyHy5waXNjZXMucHJv",
-            "dG9jb2wuU3RyaW5nS2V5RW50cnlCEqoCD1Bpc2Nlcy5Qcm90b2NvbGIGcHJv",
-            "dG8z"));
+            "dG9yM0ludCIsCg5CeXRlVmFsdWVFbnRyeRILCgNrZXkYASABKAwSDQoFdmFs",
+            "dWUYAiABKAwiQAoMQnl0ZVZhbHVlTWFwEjAKB2VudHJpZXMYASADKAsyHy5w",
+            "aXNjZXMucHJvdG9jb2wuQnl0ZVZhbHVlRW50cnkiKQoLSW50S2V5RW50cnkS",
+            "CwoDa2V5GAEgASgFEg0KBXZhbHVlGAIgASgMIjoKCUludEtleU1hcBItCgdl",
+            "bnRyaWVzGAEgAygLMhwucGlzY2VzLnByb3RvY29sLkludEtleUVudHJ5IioK",
+            "DExvbmdLZXlFbnRyeRILCgNrZXkYASABKAMSDQoFdmFsdWUYAiABKAwiPAoK",
+            "TG9uZ0tleU1hcBIuCgdlbnRyaWVzGAEgAygLMh0ucGlzY2VzLnByb3RvY29s",
+            "LkxvbmdLZXlFbnRyeSIsCg5TdHJpbmdLZXlFbnRyeRILCgNrZXkYASABKAkS",
+            "DQoFdmFsdWUYAiABKAwiQAoMU3RyaW5nS2V5TWFwEjAKB2VudHJpZXMYASAD",
+            "KAsyHy5waXNjZXMucHJvdG9jb2wuU3RyaW5nS2V5RW50cnkqYQoLTWVzc2Fn",
+            "ZVR5cGUSGgoWTUVTU0FHRV9UWVBFX0hFQVJUQkVBVBAAEhkKFU1FU1NBR0Vf",
+            "VFlQRV9CVVNJTkVTUxABEhsKF01FU1NBR0VfVFlQRV9ESVNDT05ORUNUEAIq",
+            "3gIKEERpc2Nvbm5lY3RSZWFzb24SHQoZRElTQ09OTkVDVF9SRUFTT05fVU5L",
+            "Tk9XThAAEiIKHkRJU0NPTk5FQ1RfUkVBU09OX0NMSUVOVF9DTE9TRRABEiIK",
+            "HkRJU0NPTk5FQ1RfUkVBU09OX1NFUlZFUl9DTE9TRRACEiIKHkRJU0NPTk5F",
+            "Q1RfUkVBU09OX0lETEVfVElNRU9VVBADEiUKIURJU0NPTk5FQ1RfUkVBU09O",
+            "X0RVUExJQ0FURV9MT0dJThAEEigKJERJU0NPTk5FQ1RfUkVBU09OX1NFUlZF",
+            "Ul9NQUlOVEVOQU5DRRAFEhwKGERJU0NPTk5FQ1RfUkVBU09OX0JBTk5FRBAG",
+            "EiMKH0RJU0NPTk5FQ1RfUkVBU09OX05FVFdPUktfRVJST1IQBxIrCidESVND",
+            "T05ORUNUX1JFQVNPTl9BVVRIRU5USUNBVElPTl9GQUlMRUQQCEISqgIPUGlz",
+            "Y2VzLlByb3RvY29sYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Pisces.Protocol.ExternalMessage), global::Pisces.Protocol.ExternalMessage.Parser, new[]{ "CmdCode", "ProtocolSwitch", "CmdMerge", "ResponseStatus", "ValidMsg", "Data", "MsgId", "Metadata" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, }),
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Pisces.Protocol.MessageType), typeof(global::Pisces.Protocol.DisconnectReason), }, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Pisces.Protocol.DisconnectNotify), global::Pisces.Protocol.DisconnectNotify.Parser, new[]{ "Reason", "Message", "EstimatedRecoveryTime", "Timestamp" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Pisces.Protocol.ExternalMessage), global::Pisces.Protocol.ExternalMessage.Parser, new[]{ "MessageType", "ProtocolSwitch", "CmdMerge", "ResponseStatus", "ValidMsg", "Data", "MsgId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Pisces.Protocol.HeartbeatMessage), global::Pisces.Protocol.HeartbeatMessage.Parser, new[]{ "Timestamp" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Pisces.Protocol.IntValue), global::Pisces.Protocol.IntValue.Parser, new[]{ "Value" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Pisces.Protocol.LongValue), global::Pisces.Protocol.LongValue.Parser, new[]{ "Value" }, null, null, null, null),
@@ -93,10 +105,328 @@ namespace Pisces.Protocol {
     #endregion
 
   }
+  #region Enums
+  public enum MessageType {
+    [pbr::OriginalName("MESSAGE_TYPE_HEARTBEAT")] Heartbeat = 0,
+    [pbr::OriginalName("MESSAGE_TYPE_BUSINESS")] Business = 1,
+    [pbr::OriginalName("MESSAGE_TYPE_DISCONNECT")] Disconnect = 2,
+  }
+
+  public enum DisconnectReason {
+    [pbr::OriginalName("DISCONNECT_REASON_UNKNOWN")] Unknown = 0,
+    [pbr::OriginalName("DISCONNECT_REASON_CLIENT_CLOSE")] ClientClose = 1,
+    [pbr::OriginalName("DISCONNECT_REASON_SERVER_CLOSE")] ServerClose = 2,
+    [pbr::OriginalName("DISCONNECT_REASON_IDLE_TIMEOUT")] IdleTimeout = 3,
+    [pbr::OriginalName("DISCONNECT_REASON_DUPLICATE_LOGIN")] DuplicateLogin = 4,
+    [pbr::OriginalName("DISCONNECT_REASON_SERVER_MAINTENANCE")] ServerMaintenance = 5,
+    [pbr::OriginalName("DISCONNECT_REASON_BANNED")] Banned = 6,
+    [pbr::OriginalName("DISCONNECT_REASON_NETWORK_ERROR")] NetworkError = 7,
+    [pbr::OriginalName("DISCONNECT_REASON_AUTHENTICATION_FAILED")] AuthenticationFailed = 8,
+  }
+
+  #endregion
+
   #region Messages
-  /// <summary>
-  /// 外部消息 - 客户端与服务器之间的通信协议
-  /// </summary>
+  public sealed partial class DisconnectNotify : pb::IMessage<DisconnectNotify>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<DisconnectNotify> _parser = new pb::MessageParser<DisconnectNotify>(() => new DisconnectNotify());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<DisconnectNotify> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[0]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public DisconnectNotify() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public DisconnectNotify(DisconnectNotify other) : this() {
+      reason_ = other.reason_;
+      message_ = other.message_;
+      estimatedRecoveryTime_ = other.estimatedRecoveryTime_;
+      timestamp_ = other.timestamp_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public DisconnectNotify Clone() {
+      return new DisconnectNotify(this);
+    }
+
+    /// <summary>Field number for the "reason" field.</summary>
+    public const int ReasonFieldNumber = 1;
+    private global::Pisces.Protocol.DisconnectReason reason_ = global::Pisces.Protocol.DisconnectReason.Unknown;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Pisces.Protocol.DisconnectReason Reason {
+      get { return reason_; }
+      set {
+        reason_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "message" field.</summary>
+    public const int MessageFieldNumber = 2;
+    private string message_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Message {
+      get { return message_; }
+      set {
+        message_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "estimated_recovery_time" field.</summary>
+    public const int EstimatedRecoveryTimeFieldNumber = 3;
+    private long estimatedRecoveryTime_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public long EstimatedRecoveryTime {
+      get { return estimatedRecoveryTime_; }
+      set {
+        estimatedRecoveryTime_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "timestamp" field.</summary>
+    public const int TimestampFieldNumber = 4;
+    private long timestamp_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public long Timestamp {
+      get { return timestamp_; }
+      set {
+        timestamp_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as DisconnectNotify);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(DisconnectNotify other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Reason != other.Reason) return false;
+      if (Message != other.Message) return false;
+      if (EstimatedRecoveryTime != other.EstimatedRecoveryTime) return false;
+      if (Timestamp != other.Timestamp) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Reason != global::Pisces.Protocol.DisconnectReason.Unknown) hash ^= Reason.GetHashCode();
+      if (Message.Length != 0) hash ^= Message.GetHashCode();
+      if (EstimatedRecoveryTime != 0L) hash ^= EstimatedRecoveryTime.GetHashCode();
+      if (Timestamp != 0L) hash ^= Timestamp.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Reason != global::Pisces.Protocol.DisconnectReason.Unknown) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Reason);
+      }
+      if (Message.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Message);
+      }
+      if (EstimatedRecoveryTime != 0L) {
+        output.WriteRawTag(24);
+        output.WriteInt64(EstimatedRecoveryTime);
+      }
+      if (Timestamp != 0L) {
+        output.WriteRawTag(32);
+        output.WriteInt64(Timestamp);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Reason != global::Pisces.Protocol.DisconnectReason.Unknown) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Reason);
+      }
+      if (Message.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Message);
+      }
+      if (EstimatedRecoveryTime != 0L) {
+        output.WriteRawTag(24);
+        output.WriteInt64(EstimatedRecoveryTime);
+      }
+      if (Timestamp != 0L) {
+        output.WriteRawTag(32);
+        output.WriteInt64(Timestamp);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Reason != global::Pisces.Protocol.DisconnectReason.Unknown) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Reason);
+      }
+      if (Message.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Message);
+      }
+      if (EstimatedRecoveryTime != 0L) {
+        size += 1 + pb::CodedOutputStream.ComputeInt64Size(EstimatedRecoveryTime);
+      }
+      if (Timestamp != 0L) {
+        size += 1 + pb::CodedOutputStream.ComputeInt64Size(Timestamp);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(DisconnectNotify other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Reason != global::Pisces.Protocol.DisconnectReason.Unknown) {
+        Reason = other.Reason;
+      }
+      if (other.Message.Length != 0) {
+        Message = other.Message;
+      }
+      if (other.EstimatedRecoveryTime != 0L) {
+        EstimatedRecoveryTime = other.EstimatedRecoveryTime;
+      }
+      if (other.Timestamp != 0L) {
+        Timestamp = other.Timestamp;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Reason = (global::Pisces.Protocol.DisconnectReason) input.ReadEnum();
+            break;
+          }
+          case 18: {
+            Message = input.ReadString();
+            break;
+          }
+          case 24: {
+            EstimatedRecoveryTime = input.ReadInt64();
+            break;
+          }
+          case 32: {
+            Timestamp = input.ReadInt64();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            Reason = (global::Pisces.Protocol.DisconnectReason) input.ReadEnum();
+            break;
+          }
+          case 18: {
+            Message = input.ReadString();
+            break;
+          }
+          case 24: {
+            EstimatedRecoveryTime = input.ReadInt64();
+            break;
+          }
+          case 32: {
+            Timestamp = input.ReadInt64();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
   public sealed partial class ExternalMessage : pb::IMessage<ExternalMessage>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -111,7 +441,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -131,14 +461,13 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public ExternalMessage(ExternalMessage other) : this() {
-      cmdCode_ = other.cmdCode_;
+      messageType_ = other.messageType_;
       protocolSwitch_ = other.protocolSwitch_;
       cmdMerge_ = other.cmdMerge_;
       responseStatus_ = other.responseStatus_;
       validMsg_ = other.validMsg_;
       data_ = other.data_;
       msgId_ = other.msgId_;
-      metadata_ = other.metadata_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -148,27 +477,21 @@ namespace Pisces.Protocol {
       return new ExternalMessage(this);
     }
 
-    /// <summary>Field number for the "cmd_code" field.</summary>
-    public const int CmdCodeFieldNumber = 1;
-    private int cmdCode_;
-    /// <summary>
-    /// 请求命令类型
-    /// </summary>
+    /// <summary>Field number for the "message_type" field.</summary>
+    public const int MessageTypeFieldNumber = 1;
+    private global::Pisces.Protocol.MessageType messageType_ = global::Pisces.Protocol.MessageType.Heartbeat;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int CmdCode {
-      get { return cmdCode_; }
+    public global::Pisces.Protocol.MessageType MessageType {
+      get { return messageType_; }
       set {
-        cmdCode_ = value;
+        messageType_ = value;
       }
     }
 
     /// <summary>Field number for the "protocol_switch" field.</summary>
     public const int ProtocolSwitchFieldNumber = 2;
     private int protocolSwitch_;
-    /// <summary>
-    /// 协议开关
-    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int ProtocolSwitch {
@@ -181,9 +504,6 @@ namespace Pisces.Protocol {
     /// <summary>Field number for the "cmd_merge" field.</summary>
     public const int CmdMergeFieldNumber = 3;
     private int cmdMerge_;
-    /// <summary>
-    /// 业务路由（高16位为 cmd，低16位为 subCmd）
-    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CmdMerge {
@@ -196,9 +516,6 @@ namespace Pisces.Protocol {
     /// <summary>Field number for the "response_status" field.</summary>
     public const int ResponseStatusFieldNumber = 4;
     private int responseStatus_;
-    /// <summary>
-    /// 响应码: 0=成功, 其他表示有错误
-    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int ResponseStatus {
@@ -211,9 +528,6 @@ namespace Pisces.Protocol {
     /// <summary>Field number for the "valid_msg" field.</summary>
     public const int ValidMsgFieldNumber = 5;
     private string validMsg_ = "";
-    /// <summary>
-    /// 验证信息（当 response_status != 0 时的错误描述）
-    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string ValidMsg {
@@ -226,9 +540,6 @@ namespace Pisces.Protocol {
     /// <summary>Field number for the "data" field.</summary>
     public const int DataFieldNumber = 6;
     private pb::ByteString data_ = pb::ByteString.Empty;
-    /// <summary>
-    /// 业务数据（Protobuf 序列化后的字节数据）
-    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public pb::ByteString Data {
@@ -241,9 +552,6 @@ namespace Pisces.Protocol {
     /// <summary>Field number for the "msg_id" field.</summary>
     public const int MsgIdFieldNumber = 7;
     private int msgId_;
-    /// <summary>
-    /// 消息标记号（用于请求/响应配对）
-    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int MsgId {
@@ -251,20 +559,6 @@ namespace Pisces.Protocol {
       set {
         msgId_ = value;
       }
-    }
-
-    /// <summary>Field number for the "metadata" field.</summary>
-    public const int MetadataFieldNumber = 8;
-    private static readonly pbc::MapField<string, string>.Codec _map_metadata_codec
-        = new pbc::MapField<string, string>.Codec(pb::FieldCodec.ForString(10, ""), pb::FieldCodec.ForString(18, ""), 66);
-    private readonly pbc::MapField<string, string> metadata_ = new pbc::MapField<string, string>();
-    /// <summary>
-    /// 元信息（扩展字段）
-    /// </summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::MapField<string, string> Metadata {
-      get { return metadata_; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -282,14 +576,13 @@ namespace Pisces.Protocol {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (CmdCode != other.CmdCode) return false;
+      if (MessageType != other.MessageType) return false;
       if (ProtocolSwitch != other.ProtocolSwitch) return false;
       if (CmdMerge != other.CmdMerge) return false;
       if (ResponseStatus != other.ResponseStatus) return false;
       if (ValidMsg != other.ValidMsg) return false;
       if (Data != other.Data) return false;
       if (MsgId != other.MsgId) return false;
-      if (!Metadata.Equals(other.Metadata)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -297,14 +590,13 @@ namespace Pisces.Protocol {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
-      if (CmdCode != 0) hash ^= CmdCode.GetHashCode();
+      if (MessageType != global::Pisces.Protocol.MessageType.Heartbeat) hash ^= MessageType.GetHashCode();
       if (ProtocolSwitch != 0) hash ^= ProtocolSwitch.GetHashCode();
       if (CmdMerge != 0) hash ^= CmdMerge.GetHashCode();
       if (ResponseStatus != 0) hash ^= ResponseStatus.GetHashCode();
       if (ValidMsg.Length != 0) hash ^= ValidMsg.GetHashCode();
       if (Data.Length != 0) hash ^= Data.GetHashCode();
       if (MsgId != 0) hash ^= MsgId.GetHashCode();
-      hash ^= Metadata.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -323,9 +615,9 @@ namespace Pisces.Protocol {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      if (CmdCode != 0) {
+      if (MessageType != global::Pisces.Protocol.MessageType.Heartbeat) {
         output.WriteRawTag(8);
-        output.WriteInt32(CmdCode);
+        output.WriteEnum((int) MessageType);
       }
       if (ProtocolSwitch != 0) {
         output.WriteRawTag(16);
@@ -351,7 +643,6 @@ namespace Pisces.Protocol {
         output.WriteRawTag(56);
         output.WriteInt32(MsgId);
       }
-      metadata_.WriteTo(output, _map_metadata_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -362,9 +653,9 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (CmdCode != 0) {
+      if (MessageType != global::Pisces.Protocol.MessageType.Heartbeat) {
         output.WriteRawTag(8);
-        output.WriteInt32(CmdCode);
+        output.WriteEnum((int) MessageType);
       }
       if (ProtocolSwitch != 0) {
         output.WriteRawTag(16);
@@ -390,7 +681,6 @@ namespace Pisces.Protocol {
         output.WriteRawTag(56);
         output.WriteInt32(MsgId);
       }
-      metadata_.WriteTo(ref output, _map_metadata_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -401,8 +691,8 @@ namespace Pisces.Protocol {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
-      if (CmdCode != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(CmdCode);
+      if (MessageType != global::Pisces.Protocol.MessageType.Heartbeat) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) MessageType);
       }
       if (ProtocolSwitch != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(ProtocolSwitch);
@@ -422,7 +712,6 @@ namespace Pisces.Protocol {
       if (MsgId != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(MsgId);
       }
-      size += metadata_.CalculateSize(_map_metadata_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -435,8 +724,8 @@ namespace Pisces.Protocol {
       if (other == null) {
         return;
       }
-      if (other.CmdCode != 0) {
-        CmdCode = other.CmdCode;
+      if (other.MessageType != global::Pisces.Protocol.MessageType.Heartbeat) {
+        MessageType = other.MessageType;
       }
       if (other.ProtocolSwitch != 0) {
         ProtocolSwitch = other.ProtocolSwitch;
@@ -456,7 +745,6 @@ namespace Pisces.Protocol {
       if (other.MsgId != 0) {
         MsgId = other.MsgId;
       }
-      metadata_.MergeFrom(other.metadata_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -473,7 +761,7 @@ namespace Pisces.Protocol {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            CmdCode = input.ReadInt32();
+            MessageType = (global::Pisces.Protocol.MessageType) input.ReadEnum();
             break;
           }
           case 16: {
@@ -498,10 +786,6 @@ namespace Pisces.Protocol {
           }
           case 56: {
             MsgId = input.ReadInt32();
-            break;
-          }
-          case 66: {
-            metadata_.AddEntriesFrom(input, _map_metadata_codec);
             break;
           }
         }
@@ -520,7 +804,7 @@ namespace Pisces.Protocol {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 8: {
-            CmdCode = input.ReadInt32();
+            MessageType = (global::Pisces.Protocol.MessageType) input.ReadEnum();
             break;
           }
           case 16: {
@@ -547,10 +831,6 @@ namespace Pisces.Protocol {
             MsgId = input.ReadInt32();
             break;
           }
-          case 66: {
-            metadata_.AddEntriesFrom(ref input, _map_metadata_codec);
-            break;
-          }
         }
       }
     }
@@ -558,9 +838,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// 心跳消息
-  /// </summary>
   public sealed partial class HeartbeatMessage : pb::IMessage<HeartbeatMessage>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -575,7 +852,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -608,9 +885,6 @@ namespace Pisces.Protocol {
     /// <summary>Field number for the "timestamp" field.</summary>
     public const int TimestampFieldNumber = 1;
     private long timestamp_;
-    /// <summary>
-    /// 时间戳
-    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public long Timestamp {
@@ -753,9 +1027,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// int 值包装器
-  /// </summary>
   public sealed partial class IntValue : pb::IMessage<IntValue>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -770,7 +1041,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -945,9 +1216,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// long 值包装器
-  /// </summary>
   public sealed partial class LongValue : pb::IMessage<LongValue>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -962,7 +1230,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1137,9 +1405,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// string 值包装器
-  /// </summary>
   public sealed partial class StringValue : pb::IMessage<StringValue>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -1154,7 +1419,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1329,9 +1594,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// bool 值包装器
-  /// </summary>
   public sealed partial class BoolValue : pb::IMessage<BoolValue>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -1346,7 +1608,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1521,9 +1783,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// int 列表包装器
-  /// </summary>
   public sealed partial class IntValueList : pb::IMessage<IntValueList>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -1538,7 +1797,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1704,9 +1963,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// long 列表包装器
-  /// </summary>
   public sealed partial class LongValueList : pb::IMessage<LongValueList>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -1721,7 +1977,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[7]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[8]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1887,9 +2143,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// string 列表包装器
-  /// </summary>
   public sealed partial class StringValueList : pb::IMessage<StringValueList>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -1904,7 +2157,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[8]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[9]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2068,9 +2321,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// bool 列表包装器
-  /// </summary>
   public sealed partial class BoolValueList : pb::IMessage<BoolValueList>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -2085,7 +2335,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[9]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[10]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2251,10 +2501,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// 通用对象列表包装器
-  /// 用于存放任意 protobuf 对象列表，每个 bytes 是一个序列化后的对象
-  /// </summary>
   public sealed partial class ByteValueList : pb::IMessage<ByteValueList>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -2269,7 +2515,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[10]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[11]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2433,9 +2679,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// 二维浮点向量
-  /// </summary>
   public sealed partial class Vector2 : pb::IMessage<Vector2>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -2450,7 +2693,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[11]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[12]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2662,9 +2905,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// 二维整数向量
-  /// </summary>
   public sealed partial class Vector2Int : pb::IMessage<Vector2Int>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -2679,7 +2919,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[12]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[13]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2891,9 +3131,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// 三维浮点向量
-  /// </summary>
   public sealed partial class Vector3 : pb::IMessage<Vector3>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -2908,7 +3145,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[13]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[14]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3157,9 +3394,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// 三维整数向量
-  /// </summary>
   public sealed partial class Vector3Int : pb::IMessage<Vector3Int>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -3174,7 +3408,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[14]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[15]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3423,9 +3657,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// 二维浮点向量列表
-  /// </summary>
   public sealed partial class Vector2List : pb::IMessage<Vector2List>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -3440,7 +3671,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[15]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[16]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3604,9 +3835,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// 二维整数向量列表
-  /// </summary>
   public sealed partial class Vector2IntList : pb::IMessage<Vector2IntList>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -3621,7 +3849,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[16]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[17]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3785,9 +4013,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// 三维浮点向量列表
-  /// </summary>
   public sealed partial class Vector3List : pb::IMessage<Vector3List>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -3802,7 +4027,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[17]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[18]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3966,9 +4191,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// 三维整数向量列表
-  /// </summary>
   public sealed partial class Vector3IntList : pb::IMessage<Vector3IntList>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -3983,7 +4205,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[18]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[19]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4147,9 +4369,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// 通用字典条目（键值对）- key 和 value 都是序列化后的 bytes
-  /// </summary>
   public sealed partial class ByteValueEntry : pb::IMessage<ByteValueEntry>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -4164,7 +4383,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[19]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[20]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4376,9 +4595,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// 通用对象字典包装器
-  /// </summary>
   public sealed partial class ByteValueMap : pb::IMessage<ByteValueMap>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -4393,7 +4609,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[20]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[21]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4557,9 +4773,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// int 键条目
-  /// </summary>
   public sealed partial class IntKeyEntry : pb::IMessage<IntKeyEntry>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -4574,7 +4787,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[21]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[22]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4786,10 +4999,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// int 键到对象值的字典包装器
-  /// 适用于：物品ID -> 物品信息、技能ID -> 技能数据等
-  /// </summary>
   public sealed partial class IntKeyMap : pb::IMessage<IntKeyMap>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -4804,7 +5013,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[22]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[23]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4968,9 +5177,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// long 键条目
-  /// </summary>
   public sealed partial class LongKeyEntry : pb::IMessage<LongKeyEntry>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -4985,7 +5191,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[23]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[24]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5197,10 +5403,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// long 键到对象值的字典包装器
-  /// 适用于：玩家ID -> 玩家信息、订单ID -> 订单数据等
-  /// </summary>
   public sealed partial class LongKeyMap : pb::IMessage<LongKeyMap>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -5215,7 +5417,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[24]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[25]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5379,9 +5581,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// string 键条目
-  /// </summary>
   public sealed partial class StringKeyEntry : pb::IMessage<StringKeyEntry>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -5396,7 +5595,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[25]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[26]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5608,10 +5807,6 @@ namespace Pisces.Protocol {
 
   }
 
-  /// <summary>
-  /// string 键到对象值的字典包装器
-  /// 适用于：配置名 -> 配置值、属性名 -> 属性数据等
-  /// </summary>
   public sealed partial class StringKeyMap : pb::IMessage<StringKeyMap>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -5626,7 +5821,7 @@ namespace Pisces.Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[26]; }
+      get { return global::Pisces.Protocol.PiscesCommonReflection.Descriptor.MessageTypes[27]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

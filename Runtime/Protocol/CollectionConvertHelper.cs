@@ -13,23 +13,35 @@ namespace Pisces.Protocol
         /// <summary>
         /// 核心填充引擎：将任何 IList 转换为 List (支持转换器)
         /// </summary>
-        public static void FillList<TSource, TResult>(IList<TSource> source, List<TResult> result, Func<TSource, TResult> converter, bool skipPbErrors = false)
+        public static void FillList<TSource, TResult>(
+            IList<TSource> source,
+            List<TResult> result,
+            Func<TSource, TResult> converter,
+            bool skipPbErrors = false
+        )
         {
-            if (result == null) return;
+            if (result == null)
+                return;
             result.Clear();
-            
-            if (source == null) return;
+
+            if (source == null)
+                return;
             var count = source.Count; // 性能优化：缓存 Count
-            if (count == 0) return;
+            if (count == 0)
+                return;
 
             // 预分配容量，防止 List 内部多次扩容
-            if (result.Capacity < count) result.Capacity = count;
+            if (result.Capacity < count)
+                result.Capacity = count;
 
             for (var i = 0; i < count; i++)
             {
                 if (skipPbErrors)
                 {
-                    try { AddItem(result, converter(source[i])); }
+                    try
+                    {
+                        AddItem(result, converter(source[i]));
+                    }
                     catch (InvalidProtocolBufferException) { }
                 }
                 else
@@ -43,22 +55,27 @@ namespace Pisces.Protocol
         /// 核心填充引擎：将 IList 转换为 RepeatedField
         /// </summary>
         public static void FillRepeatedField<TSource, TResult>(
-            IList<TSource> source, 
-            RepeatedField<TResult> result, 
-            Func<TSource, TResult> converter)
+            IList<TSource> source,
+            RepeatedField<TResult> result,
+            Func<TSource, TResult> converter
+        )
         {
-            if (result == null) return;
+            if (result == null)
+                return;
             result.Clear();
-            
-            if (source == null) return;
+
+            if (source == null)
+                return;
             var count = source.Count;
-            if (count == 0) return;
+            if (count == 0)
+                return;
 
             result.Capacity = count;
             for (var i = 0; i < count; i++)
             {
                 var item = converter(source[i]);
-                if (item != null) result.Add(item);
+                if (item != null)
+                    result.Add(item);
             }
         }
 
@@ -69,14 +86,18 @@ namespace Pisces.Protocol
             RepeatedField<TEntry> entries,
             Dictionary<TKey, TValue> result,
             Func<TEntry, TKey> keySelector,
-            Func<TEntry, TValue> valueConverter)
+            Func<TEntry, TValue> valueConverter
+        )
         {
-            if (result == null) return;
+            if (result == null)
+                return;
             result.Clear();
-            
-            if (entries == null) return;
+
+            if (entries == null)
+                return;
             var count = entries.Count;
-            if (count == 0) return;
+            if (count == 0)
+                return;
 
             for (var i = 0; i < count; i++)
             {
@@ -84,7 +105,8 @@ namespace Pisces.Protocol
                 {
                     var entry = entries[i];
                     var val = valueConverter(entry);
-                    if (val != null) result[keySelector(entry)] = val;
+                    if (val != null)
+                        result[keySelector(entry)] = val;
                 }
                 catch (InvalidProtocolBufferException) { }
                 catch (ArgumentException) { } // 键冲突处理
@@ -103,26 +125,32 @@ namespace Pisces.Protocol
         public static void FillEntriesFromDictionary<TKey, TValue, TEntry>(
             IDictionary<TKey, TValue> source,
             RepeatedField<TEntry> result,
-            Func<TKey, TValue, TEntry> entryCreator)
+            Func<TKey, TValue, TEntry> entryCreator
+        )
         {
-            if (result == null) return;
+            if (result == null)
+                return;
             result.Clear();
-            
-            if (source == null) return;
+
+            if (source == null)
+                return;
             var count = source.Count;
-            if (count == 0) return;
+            if (count == 0)
+                return;
 
             result.Capacity = count;
             foreach (var kvp in source)
             {
                 var entry = entryCreator(kvp.Key, kvp.Value);
-                if (entry != null) result.Add(entry);
+                if (entry != null)
+                    result.Add(entry);
             }
         }
 
         private static void AddItem<T>(List<T> list, T item)
         {
-            if (item != null) list.Add(item);
+            if (item != null)
+                list.Add(item);
         }
     }
 }

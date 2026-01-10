@@ -1,5 +1,6 @@
 using Google.Protobuf;
 using Pisces.Client.Utils;
+using Pisces.Protocol;
 
 namespace Pisces.Client.Sdk
 {
@@ -9,6 +10,8 @@ namespace Pisces.Client.Sdk
     public sealed partial class RequestCommand : IPoolable
     {
         private static readonly ByteString _emptyByteString = ByteString.Empty;
+
+        public MessageType MessageType { get; private set; }
 
         /// <summary>
         /// 获取消息标记号。该字段由前端在发起请求时设置，
@@ -26,18 +29,16 @@ namespace Pisces.Client.Sdk
         /// </summary>
         public ByteString Data { get; private set; }
 
-        /// <summary>
-        /// 获取请求命令类型，默认为业务类型（Business）。
-        /// 可选值包括心跳（Heartbeat）和业务（Business）两种类型。
-        /// </summary>
-        public CommandType CommandType { get; private set; } = CommandType.Business;
-
-        internal void Initialize(int cmdMerge, ByteString data, CommandType commandType = CommandType.Business)
+        private void Initialize(
+            int cmdMerge,
+            ByteString data,
+            MessageType messageType = MessageType.Business
+        )
         {
             CmdMerge = cmdMerge;
             Data = data ?? _emptyByteString;
-            CommandType = commandType;
-            MsgId = commandType == CommandType.Heartbeat ? 0 : MsgIdManager.GenerateNextMsgId();
+            MessageType = messageType;
+            MsgId = messageType == MessageType.Business ? MsgIdManager.GenerateNextMsgId() : 0;
         }
 
         /// <summary>
@@ -48,7 +49,7 @@ namespace Pisces.Client.Sdk
             MsgId = 0;
             CmdMerge = 0;
             Data = _emptyByteString;
-            CommandType = CommandType.Business;
+            MessageType = MessageType.Heartbeat;
         }
 
         /// <summary>

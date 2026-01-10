@@ -156,7 +156,10 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 发送请求并等待响应
         /// </summary>
-        public async UniTask<ResponseMessage> RequestAsync(int cmdMerge, CancellationToken cancellationToken = default)
+        public async UniTask<ResponseMessage> RequestAsync(
+            int cmdMerge,
+            CancellationToken cancellationToken = default
+        )
         {
             EnsureInitialized();
             return await _requestManager.RequestAsync(cmdMerge, cancellationToken);
@@ -165,7 +168,12 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 发送请求并等待响应
         /// </summary>
-        public async UniTask<ResponseMessage> RequestAsync<TRequest>(int cmdMerge, TRequest request, CancellationToken cancellationToken = default) where TRequest : IMessage
+        public async UniTask<ResponseMessage> RequestAsync<TRequest>(
+            int cmdMerge,
+            TRequest request,
+            CancellationToken cancellationToken = default
+        )
+            where TRequest : IMessage
         {
             EnsureInitialized();
             return await _requestManager.RequestAsync(cmdMerge, request, cancellationToken);
@@ -174,7 +182,10 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 直接发送 RequestCommand 并等待响应
         /// </summary>
-        public async UniTask<ResponseMessage> RequestAsync(RequestCommand command, CancellationToken cancellationToken = default)
+        public async UniTask<ResponseMessage> RequestAsync(
+            RequestCommand command,
+            CancellationToken cancellationToken = default
+        )
         {
             EnsureInitialized();
             return await _requestManager.RequestAsync(command, cancellationToken);
@@ -183,7 +194,11 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 发送请求并等待响应（获取指定类型的响应数据）
         /// </summary>
-        public async UniTask<TResponse> RequestAsync<TResponse>(int cmdMerge, CancellationToken cancellationToken = default) where TResponse : IMessage, new()
+        public async UniTask<TResponse> RequestAsync<TResponse>(
+            int cmdMerge,
+            CancellationToken cancellationToken = default
+        )
+            where TResponse : IMessage, new()
         {
             EnsureInitialized();
             return await _requestManager.RequestAsync<TResponse>(cmdMerge, cancellationToken);
@@ -192,7 +207,13 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 发送请求并等待响应（获取指定类型的响应数据）
         /// </summary>
-        public async UniTask<TResponse> RequestAsync<TRequest, TResponse>(int cmdMerge, TRequest request, CancellationToken cancellationToken = default) where TRequest : IMessage where TResponse : IMessage, new()
+        public async UniTask<TResponse> RequestAsync<TRequest, TResponse>(
+            int cmdMerge,
+            TRequest request,
+            CancellationToken cancellationToken = default
+        )
+            where TRequest : IMessage
+            where TResponse : IMessage, new()
         {
             EnsureInitialized();
             return await _requestManager.RequestAsync<TRequest, TResponse>(
@@ -280,11 +301,7 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 发送请求并在收到响应时执行回调（有请求体，原始响应）
         /// </summary>
-        public void Send<TRequest>(
-            int cmdMerge,
-            TRequest request,
-            Action<ResponseMessage> callback
-        )
+        public void Send<TRequest>(int cmdMerge, TRequest request, Action<ResponseMessage> callback)
             where TRequest : IMessage
         {
             if (!IsInitialized)
@@ -339,14 +356,15 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 取消订阅指定 cmdMerge 的消息（泛型版本）
         /// </summary>
-        public void Unsubscribe<TMessage>(int cmdMerge, Action<TMessage> callback) where TMessage : IMessage, new()
+        public void Unsubscribe<TMessage>(int cmdMerge, Action<TMessage> callback)
+            where TMessage : IMessage, new()
         {
             if (!IsInitialized)
                 return;
 
             _messageRouter.Unsubscribe(cmdMerge, callback);
         }
-        
+
         /// <summary>
         /// 清除该 cmdMerge 的所有订阅
         /// </summary>
@@ -355,10 +373,10 @@ namespace Pisces.Client.Sdk
         {
             if (!IsInitialized)
                 return;
-            
+
             _messageRouter.Clear(cmdMerge);
         }
-        
+
         /// <summary>
         /// 取消所有消息订阅
         /// </summary>

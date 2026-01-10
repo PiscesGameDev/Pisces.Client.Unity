@@ -1,7 +1,7 @@
 using System;
 using Google.Protobuf;
-using Pisces.Protocol;
 using Pisces.Client.Utils;
+using Pisces.Protocol;
 
 namespace Pisces.Client.Sdk
 {
@@ -29,7 +29,7 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 请求命令类型
         /// </summary>
-        public CommandType CommandType { get; private set; }
+        public MessageType MessageType { get; private set; }
 
         /// <summary>
         /// 获取响应状态码。如果消息为空则返回 0。
@@ -59,8 +59,7 @@ namespace Pisces.Client.Sdk
         public void Initialize(ExternalMessage message)
         {
             _message = message;
-            CommandType = _message.CmdCode == 0 ? CommandType.Heartbeat : CommandType.Business;
-
+            MessageType = _message.MessageType;
             ResponseStatus = _message?.ResponseStatus ?? 0;
             HasError = ResponseStatus != 0;
             Success = ResponseStatus == 0;
@@ -72,7 +71,7 @@ namespace Pisces.Client.Sdk
         public void Reset()
         {
             _message = null;
-            CommandType = CommandType.Business;
+            MessageType = MessageType.Heartbeat;
             ResponseStatus = 0;
             HasError = false;
             Success = false;
@@ -103,7 +102,8 @@ namespace Pisces.Client.Sdk
         /// </summary>
         /// <typeparam name="T">Protobuf 消息类型</typeparam>
         /// <returns>反序列化后的对象</returns>
-        public T GetValue<T>() where T : IMessage, new()
+        public T GetValue<T>()
+            where T : IMessage, new()
         {
             if (_message == null || _message.Data.IsEmpty)
             {

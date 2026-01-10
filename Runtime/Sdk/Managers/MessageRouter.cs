@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Google.Protobuf;
-using Pisces.Protocol;
 using Pisces.Client.Utils;
+using Pisces.Protocol;
 
 namespace Pisces.Client.Sdk
 {
@@ -24,7 +24,10 @@ namespace Pisces.Client.Sdk
         /// Key: 原始泛型 handler 的 hashcode + cmdMerge 组合
         /// Value: 包装后的 Action&lt;ExternalMessage&gt;
         /// </summary>
-        private readonly Dictionary<(int cmdMerge, Delegate handler), Action<ExternalMessage>> _handlerWrappers = new();
+        private readonly Dictionary<
+            (int cmdMerge, Delegate handler),
+            Action<ExternalMessage>
+        > _handlerWrappers = new();
 
         /// <summary>
         /// 订阅指定 cmdMerge 的消息

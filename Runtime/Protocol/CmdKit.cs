@@ -12,7 +12,7 @@ namespace Pisces.Protocol
 
         // 广播映射表（cmdMerge -> 描述）
         private static readonly Dictionary<int, string> _broadcastMapping = new();
-        
+
         /// <summary>
         /// 获取主命令（高16位）
         /// </summary>
@@ -31,7 +31,8 @@ namespace Pisces.Protocol
         /// <summary>
         /// 格式化为字符串 [cmd-subCmd]
         /// </summary>
-        public static string ToString(int cmdMerge) => $"[{GetCmd(cmdMerge)}-{GetSubCmd(cmdMerge)}]";
+        public static string ToString(int cmdMerge) =>
+            $"[{GetCmd(cmdMerge)}-{GetSubCmd(cmdMerge)}]";
 
         /// <summary>
         /// 注册请求映射（由生成代码调用）
@@ -52,21 +53,25 @@ namespace Pisces.Protocol
             _broadcastMapping[cmdMerge] = description;
             return cmdMerge;
         }
-        
+
         /// <summary>
         /// 获取请求描述
         /// </summary>
-        public static string GetRequestTitle(int cmdMerge)
-            => _requestMapping.TryGetValue(cmdMerge, out var title) ? title : $"Request{ToString(cmdMerge)}";
+        public static string GetRequestTitle(int cmdMerge) =>
+            _requestMapping.TryGetValue(cmdMerge, out var title)
+                ? title
+                : $"Request{ToString(cmdMerge)}";
 
         /// <summary>
         /// 获取广播描述
         /// </summary>
         public static string GetBroadcastTitle(int cmdMerge)
         {
-            return _broadcastMapping.TryGetValue(cmdMerge, out var title) ? title : $"Broadcast{ToString(cmdMerge)}";
+            return _broadcastMapping.TryGetValue(cmdMerge, out var title)
+                ? title
+                : $"Broadcast{ToString(cmdMerge)}";
         }
-        
+
         /// <summary>
         /// 清除所有映射（用于热重载）
         /// </summary>

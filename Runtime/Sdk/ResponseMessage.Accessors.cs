@@ -44,25 +44,29 @@ namespace Pisces.Client.Sdk
         /// 获取整数列表（利用缓存，后续调用避免重复反序列化）。
         /// </summary>
         /// <returns>从消息体中解析出的整数只读列表。</returns>
-        public IReadOnlyList<int> ListInt() => GetValue<IntValueList>()?.Values ?? (IReadOnlyList<int>)Array.Empty<int>();
+        public IReadOnlyList<int> ListInt() =>
+            GetValue<IntValueList>()?.Values ?? (IReadOnlyList<int>)Array.Empty<int>();
 
         /// <summary>
         /// 获取长整数列表（利用缓存，后续调用避免重复反序列化）。
         /// </summary>
         /// <returns>从消息体中解析出的长整数只读列表。</returns>
-        public IReadOnlyList<long> ListLong() => GetValue<LongValueList>()?.Values ?? (IReadOnlyList<long>)Array.Empty<long>();
+        public IReadOnlyList<long> ListLong() =>
+            GetValue<LongValueList>()?.Values ?? (IReadOnlyList<long>)Array.Empty<long>();
 
         /// <summary>
         /// 获取字符串列表（利用缓存，后续调用避免重复反序列化）。
         /// </summary>
         /// <returns>从消息体中解析出的字符串只读列表。</returns>
-        public IReadOnlyList<string> ListString() => GetValue<StringValueList>()?.Values ?? (IReadOnlyList<string>)Array.Empty<string>();
+        public IReadOnlyList<string> ListString() =>
+            GetValue<StringValueList>()?.Values ?? (IReadOnlyList<string>)Array.Empty<string>();
 
         /// <summary>
         /// 获取布尔值列表（利用缓存，后续调用避免重复反序列化）。
         /// </summary>
         /// <returns>从消息体中解析出的布尔值只读列表。</returns>
-        public IReadOnlyList<bool> ListBool() => GetValue<BoolValueList>()?.Values ?? (IReadOnlyList<bool>)Array.Empty<bool>();
+        public IReadOnlyList<bool> ListBool() =>
+            GetValue<BoolValueList>()?.Values ?? (IReadOnlyList<bool>)Array.Empty<bool>();
 
         #endregion
 
@@ -84,13 +88,15 @@ namespace Pisces.Client.Sdk
         /// 获取 Vector2Int 值。
         /// </summary>
         /// <returns>从消息体中解析出的 Vector2Int。如果数据为空则返回 Vector2Int.zero。</returns>
-        public UnityEngine.Vector2Int GetVector2Int() => GetValue<Vector2Int>() ?? UnityEngine.Vector2Int.zero;
+        public UnityEngine.Vector2Int GetVector2Int() =>
+            GetValue<Vector2Int>() ?? UnityEngine.Vector2Int.zero;
 
         /// <summary>
         /// 获取 Vector3Int 值。
         /// </summary>
         /// <returns>从消息体中解析出的 Vector3Int。如果数据为空则返回 Vector3Int.zero。</returns>
-        public UnityEngine.Vector3Int GetVector3Int() => GetValue<Vector3Int>() ?? UnityEngine.Vector3Int.zero;
+        public UnityEngine.Vector3Int GetVector3Int() =>
+            GetValue<Vector3Int>() ?? UnityEngine.Vector3Int.zero;
 
         #endregion
 
@@ -100,25 +106,31 @@ namespace Pisces.Client.Sdk
         /// 获取 Vector2 列表（利用缓存，后续调用避免重复反序列化）。
         /// </summary>
         /// <returns>从消息体中解析出的 Vector2 只读列表。</returns>
-        public IReadOnlyList<Vector2> ListVector2() => GetValue<Vector2List>()?.Values ?? (IReadOnlyList<Vector2>)Array.Empty<Vector2>();
+        public IReadOnlyList<Vector2> ListVector2() =>
+            GetValue<Vector2List>()?.Values ?? (IReadOnlyList<Vector2>)Array.Empty<Vector2>();
 
         /// <summary>
         /// 获取 Vector3 列表（利用缓存，后续调用避免重复反序列化）。
         /// </summary>
         /// <returns>从消息体中解析出的 Vector3 只读列表。</returns>
-        public IReadOnlyList<Vector3> ListVector3() => GetValue<Vector3List>()?.Values ?? (IReadOnlyList<Vector3>)Array.Empty<Vector3>();
+        public IReadOnlyList<Vector3> ListVector3() =>
+            GetValue<Vector3List>()?.Values ?? (IReadOnlyList<Vector3>)Array.Empty<Vector3>();
 
         /// <summary>
         /// 获取 Vector2Int 列表（利用缓存，后续调用避免重复反序列化）。
         /// </summary>
         /// <returns>从消息体中解析出的 Vector2Int 只读列表。</returns>
-        public IReadOnlyList<Vector2Int> ListVector2Int() => GetValue<Vector2IntList>()?.Values ?? (IReadOnlyList<Vector2Int>)Array.Empty<Vector2Int>();
+        public IReadOnlyList<Vector2Int> ListVector2Int() =>
+            GetValue<Vector2IntList>()?.Values
+            ?? (IReadOnlyList<Vector2Int>)Array.Empty<Vector2Int>();
 
         /// <summary>
         /// 获取 Vector3Int 列表（利用缓存，后续调用避免重复反序列化）。
         /// </summary>
         /// <returns>从消息体中解析出的 Vector3Int 只读列表。</returns>
-        public IReadOnlyList<Vector3Int> ListVector3Int() => GetValue<Vector3IntList>()?.Values ?? (IReadOnlyList<Vector3Int>)Array.Empty<Vector3Int>();
+        public IReadOnlyList<Vector3Int> ListVector3Int() =>
+            GetValue<Vector3IntList>()?.Values
+            ?? (IReadOnlyList<Vector3Int>)Array.Empty<Vector3Int>();
 
         #endregion
 
@@ -129,7 +141,8 @@ namespace Pisces.Client.Sdk
         /// </summary>
         /// <typeparam name="T">Protobuf 消息类型</typeparam>
         /// <param name="result">用于接收结果的列表</param>
-        public void GetList<T>(List<T> result) where T : IMessage, new()
+        public void GetList<T>(List<T> result)
+            where T : IMessage, new()
         {
             var list = GetValue<ByteValueList>();
             list?.ToList(result);
@@ -144,7 +157,8 @@ namespace Pisces.Client.Sdk
         /// </summary>
         /// <typeparam name="T">Protobuf 消息类型</typeparam>
         /// <param name="result">用于接收结果的字典</param>
-        public void GetDictionary<T>(Dictionary<int, T> result) where T : IMessage, new()
+        public void GetDictionary<T>(Dictionary<int, T> result)
+            where T : IMessage, new()
         {
             var map = GetValue<IntKeyMap>();
             map?.ToDictionary(result);
@@ -155,7 +169,8 @@ namespace Pisces.Client.Sdk
         /// </summary>
         /// <typeparam name="T">Protobuf 消息类型</typeparam>
         /// <param name="result">用于接收结果的字典</param>
-        public void GetDictionary<T>(Dictionary<long, T> result) where T : IMessage, new()
+        public void GetDictionary<T>(Dictionary<long, T> result)
+            where T : IMessage, new()
         {
             var map = GetValue<LongKeyMap>();
             map?.ToDictionary(result);
@@ -166,7 +181,8 @@ namespace Pisces.Client.Sdk
         /// </summary>
         /// <typeparam name="T">Protobuf 消息类型</typeparam>
         /// <param name="result">用于接收结果的字典</param>
-        public void GetDictionary<T>(Dictionary<string, T> result) where T : IMessage, new()
+        public void GetDictionary<T>(Dictionary<string, T> result)
+            where T : IMessage, new()
         {
             var map = GetValue<StringKeyMap>();
             map?.ToDictionary(result);

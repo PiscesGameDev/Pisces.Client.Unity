@@ -7,183 +7,152 @@ syntax = "proto3";
 package pisces.protocol;
 
 option csharp_namespace = "Pisces.Protocol";
+enum MessageType {
+    MESSAGE_TYPE_HEARTBEAT = 0;
+    MESSAGE_TYPE_BUSINESS = 1;
+    MESSAGE_TYPE_DISCONNECT = 2;
+}
 
-// ============================================
-// 通信消息类型
-// ============================================
+enum DisconnectReason {
+    DISCONNECT_REASON_UNKNOWN = 0;
+    DISCONNECT_REASON_CLIENT_CLOSE = 1;
+    DISCONNECT_REASON_SERVER_CLOSE = 2;
+    DISCONNECT_REASON_IDLE_TIMEOUT = 3;
+    DISCONNECT_REASON_DUPLICATE_LOGIN = 4;
+    DISCONNECT_REASON_SERVER_MAINTENANCE = 5;
+    DISCONNECT_REASON_BANNED = 6;
+    DISCONNECT_REASON_NETWORK_ERROR = 7;
+    DISCONNECT_REASON_AUTHENTICATION_FAILED = 8;
+}
 
-// 外部消息 - 客户端与服务器之间的通信协议
+message DisconnectNotify {
+    DisconnectReason reason = 1;
+    string message = 2;
+    int64 estimated_recovery_time = 3;
+    int64 timestamp = 4;
+}
+
 message ExternalMessage {
-    int32 cmd_code = 1;           // 请求命令类型
-    int32 protocol_switch = 2;    // 协议开关
-    int32 cmd_merge = 3;          // 业务路由（高16位为 cmd，低16位为 subCmd）
-    int32 response_status = 4;    // 响应码: 0=成功, 其他表示有错误
-    string valid_msg = 5;         // 验证信息（当 response_status != 0 时的错误描述）
-    bytes data = 6;               // 业务数据（Protobuf 序列化后的字节数据）
-    int32 msg_id = 7;             // 消息标记号（用于请求/响应配对）
-    map<string, string> metadata = 8;  // 元信息（扩展字段）
+    MessageType message_type = 1;
+    int32 protocol_switch = 2;
+    int32 cmd_merge = 3;
+    int32 response_status = 4;
+    string valid_msg = 5;
+    bytes data = 6;
+    int32 msg_id = 7;
 }
 
-// 心跳消息
 message HeartbeatMessage {
-    int64 timestamp = 1;          // 时间戳
+    int64 timestamp = 1;
 }
 
-// ============================================
-// 简单值包装器
-// ============================================
-
-// int 值包装器
 message IntValue {
     int32 value = 1;
 }
 
-// long 值包装器
 message LongValue {
     int64 value = 1;
 }
 
-// string 值包装器
 message StringValue {
     string value = 1;
 }
 
-// bool 值包装器
 message BoolValue {
     bool value = 1;
 }
 
-// ============================================
-// 列表包装器
-// ============================================
-
-// int 列表包装器
 message IntValueList {
     repeated int32 values = 1;
 }
 
-// long 列表包装器
 message LongValueList {
     repeated int64 values = 1;
 }
 
-// string 列表包装器
 message StringValueList {
     repeated string values = 1;
 }
 
-// bool 列表包装器
 message BoolValueList {
     repeated bool values = 1;
 }
 
-// 通用对象列表包装器
-// 用于存放任意 protobuf 对象列表，每个 bytes 是一个序列化后的对象
 message ByteValueList {
     repeated bytes values = 1;
 }
 
-// ============================================
-// 向量类型
-// ============================================
-
-// 二维浮点向量
 message Vector2 {
     float x = 1;
     float y = 2;
 }
 
-// 二维整数向量
 message Vector2Int {
     int32 x = 1;
     int32 y = 2;
 }
 
-// 三维浮点向量
 message Vector3 {
     float x = 1;
     float y = 2;
     float z = 3;
 }
 
-// 三维整数向量
 message Vector3Int {
     int32 x = 1;
     int32 y = 2;
     int32 z = 3;
 }
 
-// ============================================
-// 向量列表
-// ============================================
-
-// 二维浮点向量列表
 message Vector2List {
     repeated Vector2 values = 1;
 }
 
-// 二维整数向量列表
 message Vector2IntList {
     repeated Vector2Int values = 1;
 }
 
-// 三维浮点向量列表
 message Vector3List {
     repeated Vector3 values = 1;
 }
 
-// 三维整数向量列表
 message Vector3IntList {
     repeated Vector3Int values = 1;
 }
 
-// ============================================
-// 字典包装器
-// ============================================
-
-// 通用字典条目（键值对）- key 和 value 都是序列化后的 bytes
 message ByteValueEntry {
     bytes key = 1;
     bytes value = 2;
 }
 
-// 通用对象字典包装器
 message ByteValueMap {
     repeated ByteValueEntry entries = 1;
 }
 
-// int 键条目
 message IntKeyEntry {
     int32 key = 1;
     bytes value = 2;
 }
 
-// int 键到对象值的字典包装器
-// 适用于：物品ID -> 物品信息、技能ID -> 技能数据等
 message IntKeyMap {
     repeated IntKeyEntry entries = 1;
 }
 
-// long 键条目
 message LongKeyEntry {
     int64 key = 1;
     bytes value = 2;
 }
 
-// long 键到对象值的字典包装器
-// 适用于：玩家ID -> 玩家信息、订单ID -> 订单数据等
 message LongKeyMap {
     repeated LongKeyEntry entries = 1;
 }
 
-// string 键条目
 message StringKeyEntry {
     string key = 1;
     bytes value = 2;
 }
 
-// string 键到对象值的字典包装器
-// 适用于：配置名 -> 配置值、属性名 -> 属性数据等
 message StringKeyMap {
     repeated StringKeyEntry entries = 1;
 }
+
