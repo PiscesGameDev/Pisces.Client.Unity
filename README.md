@@ -157,20 +157,27 @@ PiscesSdk.Instance.Send(CmdKit.Merge(3, 3), position);   // Vector3
 ### 3. 订阅推送消息
 
 ```csharp
+// 订阅（使用 MessageParser，性能最优）
+IDisposable subscription = PiscesSdk.Instance.Subscribe(
+    CmdKit.Merge(10, 1),
+    (ChatMessage msg) => Debug.Log($"收到消息: {msg.Content}"),
+    ChatMessage.Parser
+);
+
 // 订阅（自动反序列化）
-PiscesSdk.Instance.Subscribe<ChatMessage>(CmdKit.Merge(10, 1), msg =>
-{
-    Debug.Log($"收到消息: {msg.Content}");
-});
+IDisposable subscription2 = PiscesSdk.Instance.Subscribe<ChatMessage>(
+    CmdKit.Merge(10, 1),
+    msg => Debug.Log($"收到消息: {msg.Content}")
+);
 
 // 订阅原始消息
-PiscesSdk.Instance.Subscribe(CmdKit.Merge(10, 2), (ExternalMessage msg) =>
-{
-    var data = msg.Data;  // 自行解析
-});
+IDisposable subscription3 = PiscesSdk.Instance.Subscribe(
+    CmdKit.Merge(10, 2),
+    (ExternalMessage msg) => { var data = msg.Data; }
+);
 
-// 取消订阅
-PiscesSdk.Instance.Unsubscribe<ChatMessage>(CmdKit.Merge(10, 1), handler);
+// 取消订阅（调用 Dispose）
+subscription.Dispose();
 
 // 取消所有订阅
 PiscesSdk.Instance.UnsubscribeAll(CmdKit.Merge(10, 1));
@@ -351,8 +358,9 @@ var options = new GameClientOptions
 | `RequestAsync<TReq, TResp>(cmd, req)` | 异步请求 |
 | `Send(cmd, msg)` | 仅发送消息 |
 | `Send<TReq, TResp>(cmd, req, callback)` | 回调模式 |
-| `Subscribe<T>(cmd, handler)` | 订阅推送 |
-| `Unsubscribe<T>(cmd, handler)` | 取消订阅 |
+| `Subscribe(cmd, handler)` | 订阅推送，返回 `IDisposable` |
+| `Subscribe<T>(cmd, handler)` | 泛型订阅，返回 `IDisposable` |
+| `Subscribe<T>(cmd, handler, parser)` | 使用 MessageParser 订阅（性能更优） |
 | `UnsubscribeAll(cmd)` | 取消指定命令的所有订阅 |
 | `UnsubscribeAll()` | 取消所有订阅 |
 | `Dispose()` | 释放资源 |
@@ -404,11 +412,12 @@ response.ErrorMessage      // 错误描述
 response.ResponseStatus    // 响应状态码
 
 // 获取数据
-response.GetValue<T>()     // Protobuf 消息（带缓存）
-response.GetInt()          // int
-response.GetLong()         // long
-response.GetString()       // string
-response.GetBool()         // bool
+response.GetValue<T>()              // Protobuf 消息（带缓存）
+response.GetValue(T.Parser)         // 使用 MessageParser（性能更优）
+response.GetInt()                   // int
+response.GetLong()                  // long
+response.GetString()                // string
+response.GetBool()                  // bool
 
 // 获取列表
 response.ListInt()         // List<int>
