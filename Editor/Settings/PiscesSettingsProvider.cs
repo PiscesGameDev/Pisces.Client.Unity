@@ -32,6 +32,9 @@ namespace Pisces.Client.Editor.Settings
         private SerializedProperty _maxReconnectCount;
         private SerializedProperty _receiveBufferSize;
         private SerializedProperty _sendBufferSize;
+        private SerializedProperty _enableRateLimit;
+        private SerializedProperty _maxSendRate;
+        private SerializedProperty _maxBurstSize;
         private SerializedProperty _enableLog;
         private SerializedProperty _useWorkerThread;
 
@@ -41,6 +44,7 @@ namespace Pisces.Client.Editor.Settings
         private bool _heartbeatFoldout = true;
         private bool _reconnectFoldout = true;
         private bool _bufferFoldout = false;
+        private bool _rateLimitFoldout = true;
         private bool _debugFoldout = true;
 
         // Styles
@@ -87,6 +91,9 @@ namespace Pisces.Client.Editor.Settings
             _maxReconnectCount = _serializedSettings.FindProperty("_maxReconnectCount");
             _receiveBufferSize = _serializedSettings.FindProperty("_receiveBufferSize");
             _sendBufferSize = _serializedSettings.FindProperty("_sendBufferSize");
+            _enableRateLimit = _serializedSettings.FindProperty("_enableRateLimit");
+            _maxSendRate = _serializedSettings.FindProperty("_maxSendRate");
+            _maxBurstSize = _serializedSettings.FindProperty("_maxBurstSize");
             _enableLog = _serializedSettings.FindProperty("_enableLog");
             _useWorkerThread = _serializedSettings.FindProperty("_useWorkerThread");
         }
@@ -162,6 +169,7 @@ namespace Pisces.Client.Editor.Settings
             DrawHeartbeatSection();
             DrawReconnectSection();
             DrawBufferSection();
+            DrawRateLimitSection();
             DrawDebugSection();
 
             // Validation
@@ -419,6 +427,38 @@ namespace Pisces.Client.Editor.Settings
                     EditorGUILayout.LabelField("发送缓冲区", GUILayout.Width(150));
                     _sendBufferSize.intValue = EditorGUILayout.IntField(_sendBufferSize.intValue);
                     EditorGUILayout.LabelField(FormatBytes(_sendBufferSize.intValue), GUILayout.Width(80));
+                }
+
+                EditorGUI.indentLevel--;
+            }
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+
+        private void DrawRateLimitSection()
+        {
+            EditorGUILayout.Space(5);
+            _rateLimitFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(_rateLimitFoldout, "流量控制");
+            if (_rateLimitFoldout)
+            {
+                EditorGUI.indentLevel++;
+
+                EditorGUILayout.PropertyField(_enableRateLimit, new GUIContent("启用限流",
+                    "防止消息发送过快导致网络拥塞"));
+
+                using (new EditorGUI.DisabledGroupScope(!_enableRateLimit.boolValue))
+                {
+                    EditorGUILayout.Space(5);
+
+                    DrawSliderWithInput(_maxSendRate, 10, 1000, "每秒最大消息数",
+                        "持续发送速率上限（消息/秒）");
+
+                    DrawSliderWithInput(_maxBurstSize, 10, 200, "最大突发消息数",
+                        "允许短时间突发的最大消息数");
+
+                    EditorGUILayout.Space(5);
+                    EditorGUILayout.HelpBox(
+                        $"当前配置: 持续发送速率 {_maxSendRate.intValue}/秒，允许突发 {_maxBurstSize.intValue} 条消息",
+                        MessageType.Info);
                 }
 
                 EditorGUI.indentLevel--;

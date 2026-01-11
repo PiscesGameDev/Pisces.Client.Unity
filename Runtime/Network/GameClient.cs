@@ -18,6 +18,7 @@ namespace Pisces.Client.Network
     {
         private readonly GameClientOptions _options;
         private readonly NetworkStatistics _statistics;
+        private readonly RateLimiter _rateLimiter;
         private IProtocolChannel _channel;
         private PacketBuffer _receiveBuffer;
 
@@ -79,6 +80,13 @@ namespace Pisces.Client.Network
             _statistics = new NetworkStatistics();
             _receiveBuffer = new PacketBuffer(_options.ReceiveBufferSize);
             GameLogger.Enabled = _options.EnableLog;
+
+            // 初始化限流器
+            if (_options.EnableRateLimit && _options.MaxSendRate > 0)
+            {
+                _rateLimiter = new RateLimiter(_options.MaxBurstSize, _options.MaxSendRate);
+                GameLogger.Log($"[GameClient] 限流器已启用: 速率={_options.MaxSendRate}/s, 突发={_options.MaxBurstSize}");
+            }
         }
 
         public void Connect()
@@ -102,32 +110,60 @@ namespace Pisces.Client.Network
 
             State = ConnectionState.Connecting;
 
+            // 创建新通道（不立即赋值给 _channel，确保失败时能正确清理）
+            var newChannel = ChannelFactory.Create(_options.ChannelType);
+
             try
             {
-                // 创建通道
-                _channel?.Disconnect();
-                _channel = ChannelFactory.Create(_options.ChannelType);
-
-                // 订阅通道事件
-                _channel.ReceiveMessageEvent += OnChannelReceiveMessage;
-                _channel.DisconnectServerEvent += OnChannelDisconnect;
-
                 // 初始化通道
-                _channel.OnInit();
+                newChannel.OnInit();
 
                 // 连接（带超时）
                 using var cts = new CancellationTokenSource(_options.ConnectTimeoutMs);
 
-                await UniTask.RunOnThreadPool(
-                    () =>
-                    {
-                        _channel.Connect(_options.Host, _options.Port);
-                    },
+                // 启动连接任务
+                var connectTask = UniTask.RunOnThreadPool(
+                    () => newChannel.Connect(_options.Host, _options.Port),
                     cancellationToken: cts.Token
                 );
 
-                // 等待连接建立
-                await UniTask.WaitUntil(() => _channel.IsConnected, cancellationToken: cts.Token);
+                // 等待连接完成或超时
+                try
+                {
+                    await connectTask;
+
+                    // 等待连接真正建立
+                    await UniTask.WaitUntil(
+                        () => newChannel.IsConnected,
+                        cancellationToken: cts.Token
+                    );
+                }
+                catch (OperationCanceledException)
+                {
+                    // 超时，清理新通道
+                    CleanupChannel(newChannel);
+
+                    State = ConnectionState.Disconnected;
+                    var ex = new TimeoutException(
+                        $"Connect timeout after {_options.ConnectTimeoutMs}ms to {_options.Host}:{_options.Port}"
+                    );
+                    OnError?.Invoke(ex);
+                    throw ex;
+                }
+
+                // 连接成功，清理旧通道并替换
+                if (_channel != null)
+                {
+                    _channel.ReceiveMessageEvent -= OnChannelReceiveMessage;
+                    _channel.DisconnectServerEvent -= OnChannelDisconnect;
+                    _channel.Disconnect();
+                }
+
+                _channel = newChannel;
+
+                // 订阅新通道事件
+                _channel.ReceiveMessageEvent += OnChannelReceiveMessage;
+                _channel.DisconnectServerEvent += OnChannelDisconnect;
 
                 State = ConnectionState.Connected;
                 _reconnectCount = 0;
@@ -139,21 +175,42 @@ namespace Pisces.Client.Network
 
                 GameLogger.Log($"[GameClient] 已连接到 {_options.Host}:{_options.Port}");
             }
-            catch (OperationCanceledException)
+            catch (TimeoutException)
             {
-                State = ConnectionState.Disconnected;
-                var ex = new TimeoutException(
-                    $"Connect timeout after {_options.ConnectTimeoutMs}ms"
-                );
-                OnError?.Invoke(ex);
-                throw ex;
+                // 已在上面处理，直接抛出
+                throw;
             }
             catch (Exception ex)
             {
+                // 其他异常，清理新通道
+                CleanupChannel(newChannel);
+
                 State = ConnectionState.Disconnected;
                 GameLogger.LogError($"[GameClient] 连接失败: {ex.Message}");
                 OnError?.Invoke(ex);
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// 清理通道资源
+        /// </summary>
+        private void CleanupChannel(IProtocolChannel channel)
+        {
+            if (channel == null)
+                return;
+
+            try
+            {
+                channel.Disconnect();
+                if (channel is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+            }
+            catch (Exception ex)
+            {
+                GameLogger.LogWarning($"[GameClient] 清理通道时发生异常: {ex.Message}");
             }
         }
 
@@ -312,6 +369,17 @@ namespace Pisces.Client.Network
 
             try
             {
+                // 流量控制（心跳消息豁免）
+                if (_rateLimiter != null && command.MessageType == MessageType.Business)
+                {
+                    if (!_rateLimiter.TryAcquire())
+                    {
+                        _statistics.RecordRateLimited();
+                        GameLogger.LogWarning($"[GameClient] 发送速率超限，消息被丢弃: {CmdKit.ToString(command.CmdMerge)}");
+                        return;
+                    }
+                }
+
                 var message = CreateExternalMessage(command);
                 var packet = PacketCodec.Encode(message);
                 _channel.Send(packet);

@@ -287,6 +287,52 @@ namespace Pisces.Client.Settings
 
         #endregion
 
+        #region Rate Limit Settings
+
+        [Header("Rate Limit Settings")]
+        [Tooltip("是否启用发送限流")]
+        [SerializeField]
+        private bool _enableRateLimit = true;
+
+        [Tooltip("每秒最大发送消息数")]
+        [SerializeField]
+        [Range(10, 1000)]
+        private int _maxSendRate = 100;
+
+        [Tooltip("最大突发消息数（桶容量）")]
+        [SerializeField]
+        [Range(10, 200)]
+        private int _maxBurstSize = 50;
+
+        /// <summary>
+        /// 是否启用发送限流
+        /// </summary>
+        public bool EnableRateLimit
+        {
+            get => _enableRateLimit;
+            set => _enableRateLimit = value;
+        }
+
+        /// <summary>
+        /// 每秒最大发送消息数
+        /// </summary>
+        public int MaxSendRate
+        {
+            get => _maxSendRate;
+            set => _maxSendRate = Mathf.Clamp(value, 10, 1000);
+        }
+
+        /// <summary>
+        /// 最大突发消息数
+        /// </summary>
+        public int MaxBurstSize
+        {
+            get => _maxBurstSize;
+            set => _maxBurstSize = Mathf.Clamp(value, 10, 200);
+        }
+
+        #endregion
+
         #region Debug Settings
 
         [Header("Debug Settings")]
@@ -342,6 +388,9 @@ namespace Pisces.Client.Settings
                 MaxReconnectCount = _maxReconnectCount,
                 ReceiveBufferSize = _receiveBufferSize,
                 SendBufferSize = _sendBufferSize,
+                EnableRateLimit = _enableRateLimit,
+                MaxSendRate = _maxSendRate,
+                MaxBurstSize = _maxBurstSize,
                 EnableLog = _enableLog,
                 UseWorkerThread = GetEffectiveUseWorkerThread()
             };
@@ -385,6 +434,10 @@ namespace Pisces.Client.Settings
 
             _receiveBufferSize = 65536;
             _sendBufferSize = 65536;
+
+            _enableRateLimit = true;
+            _maxSendRate = 100;
+            _maxBurstSize = 50;
 
             _enableLog = true;
             _useWorkerThread = true;

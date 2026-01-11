@@ -72,7 +72,26 @@ namespace Pisces.Client.Network
         /// </summary>
         public bool EnableLog = true;
 
-        
+        #region 流量控制
+
+        /// <summary>
+        /// 是否启用发送限流
+        /// </summary>
+        public bool EnableRateLimit = true;
+
+        /// <summary>
+        /// 每秒最大发送消息数（持续速率）
+        /// </summary>
+        public int MaxSendRate = 100;
+
+        /// <summary>
+        /// 最大突发消息数（桶容量）
+        /// 允许短时间内发送的最大消息数，超过后会被限流
+        /// </summary>
+        public int MaxBurstSize = 50;
+
+        #endregion
+
         /// <summary>
         /// 是否使用工作线程进行网络收发
         ///
@@ -107,6 +126,9 @@ namespace Pisces.Client.Network
                 ReceiveBufferSize = ReceiveBufferSize,
                 SendBufferSize = SendBufferSize,
                 EnableLog = EnableLog,
+                EnableRateLimit = EnableRateLimit,
+                MaxSendRate = MaxSendRate,
+                MaxBurstSize = MaxBurstSize,
                 UseWorkerThread = UseWorkerThread,
             };
         }

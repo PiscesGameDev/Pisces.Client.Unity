@@ -92,6 +92,9 @@ namespace Pisces.Client.Network
         private int _reconnectCount;
         private DateTime? _connectedTime;
 
+        // 限流统计
+        private long _rateLimitedCount;
+
         // 消息日志
         private readonly LinkedList<NetworkMessageLog> _messageLogs = new();
         private readonly object _logLock = new();
@@ -160,6 +163,11 @@ namespace Pisces.Client.Network
         /// 重连次数
         /// </summary>
         public int ReconnectCount => _reconnectCount;
+
+        /// <summary>
+        /// 被限流的消息数
+        /// </summary>
+        public long RateLimitedCount => _rateLimitedCount;
 
         /// <summary>
         /// 连接建立时间
@@ -290,6 +298,14 @@ namespace Pisces.Client.Network
         }
 
         /// <summary>
+        /// 记录被限流的消息
+        /// </summary>
+        public void RecordRateLimited()
+        {
+            _rateLimitedCount++;
+        }
+
+        /// <summary>
         /// 重置重连计数
         /// </summary>
         public void ResetReconnectCount()
@@ -405,6 +421,7 @@ namespace Pisces.Client.Network
 
             _currentHeartbeatTimeoutCount = 0;
             _reconnectCount = 0;
+            _rateLimitedCount = 0;
             _connectedTime = null;
 
             ClearLogs();
