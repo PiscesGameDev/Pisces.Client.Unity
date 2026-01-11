@@ -37,8 +37,9 @@ namespace Pisces.Client.Network.Channel
 
         /// <summary>
         /// 数据包缓冲区（处理粘包/拆包）
+        /// 使用默认初始大小（4KB），支持自动扩容和收缩
         /// </summary>
-        private readonly PacketBuffer _packetBuffer = new PacketBuffer(TcpReceiveBufferSize);
+        private readonly PacketBuffer _packetBuffer = new PacketBuffer();
 
         public override ChannelType ChannelType => ChannelType.Tcp;
 

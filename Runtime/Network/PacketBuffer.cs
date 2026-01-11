@@ -7,11 +7,29 @@ namespace Pisces.Client.Network
 {
     /// <summary>
     /// 数据包缓冲区（处理粘包/拆包）
+    /// 优化：使用较小的初始大小，支持自动收缩以节省内存
     /// </summary>
     public sealed class PacketBuffer
     {
+        /// <summary>
+        /// 默认初始大小（4KB，可满足大多数消息需求）
+        /// </summary>
+        private const int DefaultInitialSize = 4096;
+
+        /// <summary>
+        /// 默认收缩阈值（64KB）
+        /// </summary>
+        private const int DefaultShrinkThreshold = 65536;
+
+        /// <summary>
+        /// 收缩使用率阈值（低于此比例时触发收缩）
+        /// </summary>
+        private const float ShrinkUsageThreshold = 0.25f;
+
         private byte[] _buffer;
         private int _writePos;
+        private readonly int _initialSize;
+        private readonly int _shrinkThreshold;
 
         /// <summary>
         /// 缓冲区中的数据长度
@@ -23,9 +41,16 @@ namespace Pisces.Client.Network
         /// </summary>
         public int Capacity => _buffer.Length;
 
-        public PacketBuffer(int initialSize = 65536)
+        /// <summary>
+        /// 创建数据包缓冲区
+        /// </summary>
+        /// <param name="initialSize">初始大小（字节），默认 4KB</param>
+        /// <param name="shrinkThreshold">收缩阈值（字节），当容量超过此值且使用率低时自动收缩</param>
+        public PacketBuffer(int initialSize = DefaultInitialSize, int shrinkThreshold = DefaultShrinkThreshold)
         {
-            _buffer = new byte[initialSize];
+            _initialSize = Math.Max(initialSize, 1024); // 最小 1KB
+            _shrinkThreshold = Math.Max(shrinkThreshold, _initialSize * 2);
+            _buffer = new byte[_initialSize];
             _writePos = 0;
         }
 
@@ -95,6 +120,9 @@ namespace Pisces.Client.Network
                     Buffer.BlockCopy(_buffer, readPos, _buffer, 0, remaining);
                 }
                 _writePos = remaining;
+
+                // 尝试收缩缓冲区
+                TryShrink();
             }
 
             return packets;
@@ -106,6 +134,42 @@ namespace Pisces.Client.Network
         public void Clear()
         {
             _writePos = 0;
+
+            // 如果缓冲区过大，重置为初始大小
+            if (_buffer.Length > _shrinkThreshold)
+            {
+                _buffer = new byte[_initialSize];
+            }
+        }
+
+        /// <summary>
+        /// 尝试收缩缓冲区以节省内存
+        /// 当容量超过阈值且使用率低于 25% 时触发
+        /// </summary>
+        private void TryShrink()
+        {
+            // 只在容量超过阈值时考虑收缩
+            if (_buffer.Length <= _shrinkThreshold)
+                return;
+
+            // 计算使用率
+            float usage = (float)_writePos / _buffer.Length;
+            if (usage >= ShrinkUsageThreshold)
+                return;
+
+            // 计算新的大小（当前数据量的 2 倍，但不小于初始大小）
+            var newSize = Math.Max(_writePos * 2, _initialSize);
+
+            // 如果新大小明显小于当前大小，则收缩
+            if (newSize < _buffer.Length / 2)
+            {
+                var newBuffer = new byte[newSize];
+                if (_writePos > 0)
+                {
+                    Buffer.BlockCopy(_buffer, 0, newBuffer, 0, _writePos);
+                }
+                _buffer = newBuffer;
+            }
         }
 
         /// <summary>

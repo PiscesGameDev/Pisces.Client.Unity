@@ -3,6 +3,32 @@ using System;
 namespace Pisces.Client.Network.Channel
 {
     /// <summary>
+    /// 发送失败原因
+    /// </summary>
+    public enum SendFailureReason
+    {
+        /// <summary>
+        /// 未连接
+        /// </summary>
+        NotConnected,
+
+        /// <summary>
+        /// 数据无效
+        /// </summary>
+        InvalidData,
+
+        /// <summary>
+        /// 发送队列已满
+        /// </summary>
+        QueueFull,
+
+        /// <summary>
+        /// 通道已关闭
+        /// </summary>
+        ChannelClosed
+    }
+
+    /// <summary>
     ///  通信协议通道的接口
     /// </summary>
     public interface IProtocolChannel
@@ -38,21 +64,27 @@ namespace Pisces.Client.Network.Channel
         /// 发送数据
         /// </summary>
         /// <param name="data">要发送的数据（已编码的完整数据包）</param>
-        void Send(byte[] data);
+        /// <returns>是否成功加入发送队列</returns>
+        bool Send(byte[] data);
 
         /// <summary>
         /// 发送消息成功事件
         /// </summary>
-        public event Action<IProtocolChannel> SendMessageEvent;
+        event Action<IProtocolChannel> SendMessageEvent;
 
         /// <summary>
         /// 接收消息成功事件
         /// </summary>
-        public event Action<IProtocolChannel, byte[]> ReceiveMessageEvent;
+        event Action<IProtocolChannel, byte[]> ReceiveMessageEvent;
 
         /// <summary>
         /// 与服务器断开连接事件
         /// </summary>
-        public event Action<IProtocolChannel> DisconnectServerEvent;
+        event Action<IProtocolChannel> DisconnectServerEvent;
+
+        /// <summary>
+        /// 发送失败事件
+        /// </summary>
+        event Action<IProtocolChannel, byte[], SendFailureReason> SendFailedEvent;
     }
 }

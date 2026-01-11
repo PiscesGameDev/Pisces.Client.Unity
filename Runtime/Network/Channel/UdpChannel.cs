@@ -151,22 +151,22 @@ namespace Pisces.Client.Network.Channel
         /// <summary>
         /// 发送数据（UDP 无连接，直接发送）
         /// </summary>
-        public override void Send(byte[] data)
+        public override bool Send(byte[] data)
         {
             if (data == null || data.Length == 0)
-                return;
+                return false;
 
             if (data.Length > UdpReceiveBufferSize)
             {
                 GameLogger.LogError(
                     $"[UdpChannel] Data too large: {data.Length} bytes (max {UdpReceiveBufferSize})"
                 );
-                return;
+                return false;
             }
 
             // UDP 可以直接发送，不需要排队（无连接、无序）
             // 但为了保持一致性，我们仍使用基类的队列机制
-            base.Send(data);
+            return base.Send(data);
         }
 
         public override void Disconnect()

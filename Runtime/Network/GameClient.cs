@@ -14,21 +14,26 @@ namespace Pisces.Client.Network
     /// 游戏客户端实现
     /// 提供连接管理、消息收发、心跳维护、自动重连等功能
     /// </summary>
-    public class GameClient : IGameClient
+    public partial class GameClient : IGameClient
     {
         private readonly GameClientOptions _options;
         private readonly NetworkStatistics _statistics;
         private readonly RateLimiter _rateLimiter;
+        private readonly ConnectionStateMachine _stateMachine;
         private IProtocolChannel _channel;
         private PacketBuffer _receiveBuffer;
 
         private volatile bool _disposed;
         private volatile bool _isClosed;
-        private volatile ConnectionState _state = ConnectionState.Disconnected;
 
+        // 心跳相关
         private CancellationTokenSource _heartbeatCts;
-        private CancellationTokenSource _reconnectCts;
         private int _heartbeatTimeoutCount;
+
+        // 重连相关
+        private CancellationTokenSource _reconnectCts;
+        private readonly object _reconnectLock = new();
+        private volatile bool _isReconnecting;
         private int _reconnectCount;
 
         /// <summary>
@@ -40,22 +45,10 @@ namespace Pisces.Client.Network
             UniTaskCompletionSource<ResponseMessage>
         > _pendingRequests = new();
 
-        public ConnectionState State
-        {
-            get => _state;
-            private set
-            {
-                if (_state == value)
-                    return;
-                var oldState = _state;
-                _state = value;
-                GameLogger.Log($"[GameClient] 连接状态变化: {oldState} -> {value}");
-                OnStateChanged?.Invoke(value);
-            }
-        }
+        public ConnectionState State => _stateMachine.CurrentState;
 
         public bool IsConnected =>
-            _state == ConnectionState.Connected && _channel?.IsConnected == true;
+            _stateMachine.IsConnected && _channel?.IsConnected == true;
 
         public GameClientOptions Options => _options;
 
@@ -78,8 +71,15 @@ namespace Pisces.Client.Network
         {
             _options = options?.Clone() ?? new GameClientOptions();
             _statistics = new NetworkStatistics();
-            _receiveBuffer = new PacketBuffer(_options.ReceiveBufferSize);
+            _receiveBuffer = new PacketBuffer(
+                _options.PacketBufferInitialSize,
+                _options.PacketBufferShrinkThreshold
+            );
+            _stateMachine = new ConnectionStateMachine();
             GameLogger.Enabled = _options.EnableLog;
+
+            // 订阅状态机事件
+            _stateMachine.OnStateChanged += HandleStateMachineStateChanged;
 
             // 初始化限流器
             if (_options.EnableRateLimit && _options.MaxSendRate > 0)
@@ -87,6 +87,11 @@ namespace Pisces.Client.Network
                 _rateLimiter = new RateLimiter(_options.MaxBurstSize, _options.MaxSendRate);
                 GameLogger.Log($"[GameClient] 限流器已启用: 速率={_options.MaxSendRate}/s, 突发={_options.MaxBurstSize}");
             }
+        }
+
+        private void HandleStateMachineStateChanged(ConnectionState oldState, ConnectionState newState)
+        {
+            OnStateChanged?.Invoke(newState);
         }
 
         public void Connect()
@@ -102,13 +107,28 @@ namespace Pisces.Client.Network
             if (_isClosed)
                 throw new InvalidOperationException("客户端已关闭");
 
-            if (State is ConnectionState.Connected or ConnectionState.Connecting)
+            // 使用状态机检查是否可以连接
+            if (!_stateMachine.CanConnect)
             {
-                GameLogger.LogWarning("[GameClient] 已连接或正在连接中");
-                return;
+                if (_stateMachine.IsConnected)
+                {
+                    GameLogger.LogWarning("[GameClient] 已连接");
+                    return;
+                }
+                if (_stateMachine.IsConnectingOrReconnecting)
+                {
+                    GameLogger.LogWarning("[GameClient] 正在连接中");
+                    return;
+                }
+                throw new InvalidOperationException($"当前状态 {State} 不允许连接");
             }
 
-            State = ConnectionState.Connecting;
+            // 尝试转换到 Connecting 状态
+            if (!_stateMachine.TryTransition(ConnectionState.Connecting, out _))
+            {
+                GameLogger.LogWarning("[GameClient] 状态转换失败，无法开始连接");
+                return;
+            }
 
             // 创建新通道（不立即赋值给 _channel，确保失败时能正确清理）
             var newChannel = ChannelFactory.Create(_options.ChannelType);
@@ -143,7 +163,7 @@ namespace Pisces.Client.Network
                     // 超时，清理新通道
                     CleanupChannel(newChannel);
 
-                    State = ConnectionState.Disconnected;
+                    _stateMachine.TryTransition(ConnectionState.Disconnected, out _);
                     var ex = new TimeoutException(
                         $"Connect timeout after {_options.ConnectTimeoutMs}ms to {_options.Host}:{_options.Port}"
                     );
@@ -165,13 +185,16 @@ namespace Pisces.Client.Network
                 _channel.ReceiveMessageEvent += OnChannelReceiveMessage;
                 _channel.DisconnectServerEvent += OnChannelDisconnect;
 
-                State = ConnectionState.Connected;
+                _stateMachine.TryTransition(ConnectionState.Connected, out _);
                 _reconnectCount = 0;
                 _statistics.RecordConnected();
                 _statistics.ResetReconnectCount();
 
                 // 启动心跳
                 StartHeartbeat();
+
+                // 启动待处理请求清理
+                StartPendingRequestsCleanup();
 
                 GameLogger.Log($"[GameClient] 已连接到 {_options.Host}:{_options.Port}");
             }
@@ -185,7 +208,7 @@ namespace Pisces.Client.Network
                 // 其他异常，清理新通道
                 CleanupChannel(newChannel);
 
-                State = ConnectionState.Disconnected;
+                _stateMachine.TryTransition(ConnectionState.Disconnected, out _);
                 GameLogger.LogError($"[GameClient] 连接失败: {ex.Message}");
                 OnError?.Invoke(ex);
                 throw;
@@ -226,6 +249,7 @@ namespace Pisces.Client.Network
 
             StopHeartbeat();
             StopReconnect();
+            StopPendingRequestsCleanup();
 
             if (_channel != null)
             {
@@ -234,7 +258,7 @@ namespace Pisces.Client.Network
                 _channel.Disconnect();
             }
 
-            State = ConnectionState.Disconnected;
+            _stateMachine.TryTransition(ConnectionState.Disconnected, out _);
             _statistics.RecordDisconnected();
             ClearPendingRequests(new OperationCanceledException("Disconnected"));
 
@@ -249,6 +273,7 @@ namespace Pisces.Client.Network
             _isClosed = true;
             StopHeartbeat();
             StopReconnect();
+            StopPendingRequestsCleanup();
 
             if (_channel != null)
             {
@@ -257,257 +282,11 @@ namespace Pisces.Client.Network
                 _channel.Disconnect();
             }
 
-            State = ConnectionState.Closed;
+            _stateMachine.TryTransition(ConnectionState.Closed, out _);
             _statistics.RecordDisconnected();
             ClearPendingRequests(new OperationCanceledException("客户端已关闭"));
 
             GameLogger.Log("[GameClient] 已关闭");
-        }
-
-        public async UniTask SendAsync(
-            ExternalMessage message,
-            CancellationToken cancellationToken = default
-        )
-        {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(GameClient));
-
-            if (!IsConnected)
-                throw new InvalidOperationException("未连接");
-
-            if (message == null)
-                throw new ArgumentNullException(nameof(message));
-
-            try
-            {
-                var packet = PacketCodec.Encode(message);
-                _channel.Send(packet);
-
-                await UniTask.CompletedTask;
-            }
-            catch (Exception ex)
-            {
-                GameLogger.LogError($"[GameClient] 发送失败: {ex.Message}");
-                OnError?.Invoke(ex);
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// 发送请求并等待响应
-        /// </summary>
-        /// <param name="command">请求命令</param>
-        /// <param name="cancellationToken">取消令牌</param>
-        /// <returns>响应消息</returns>
-        public async UniTask<ResponseMessage> RequestAsync(
-            RequestCommand command,
-            CancellationToken cancellationToken = default
-        )
-        {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(GameClient));
-
-            if (!IsConnected)
-                throw new InvalidOperationException("未连接");
-
-            if (command == null)
-                throw new ArgumentNullException(nameof(command));
-
-            var tcs = new UniTaskCompletionSource<ResponseMessage>();
-
-            // 注册等待响应
-            if (
-                command.MessageType == MessageType.Business
-                && !_pendingRequests.TryAdd(command.MsgId, tcs)
-            )
-            {
-                throw new InvalidOperationException($"重复的 MsgId: {command.MsgId}");
-            }
-
-            try
-            {
-                // 发送请求
-                var message = CreateExternalMessage(command);
-                var packet = PacketCodec.Encode(message);
-                _channel.Send(packet);
-
-                // 记录统计
-                _statistics.RecordSend(packet.Length, command.CmdMerge, command.MsgId);
-
-                // 等待响应（带超时）
-                using var timeoutCts = new CancellationTokenSource(_options.RequestTimeoutMs);
-                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
-                    cancellationToken,
-                    timeoutCts.Token
-                );
-
-                var response = await tcs.Task.AttachExternalCancellation(linkedCts.Token);
-                return response;
-            }
-            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-            {
-                throw new TimeoutException(
-                    $"Request timeout after {_options.RequestTimeoutMs}ms (MsgId: {command.MsgId})"
-                );
-            }
-            finally
-            {
-                _pendingRequests.TryRemove(command.MsgId, out _);
-
-                // 归还到对象池
-                ReferencePool<RequestCommand>.Despawn(command);
-            }
-        }
-
-        /// <summary>
-        /// 发送请求（仅发送，不等待响应）
-        /// </summary>
-        public void SendRequest(RequestCommand command)
-        {
-            if (_disposed || !IsConnected || command == null)
-                return;
-
-            try
-            {
-                // 流量控制（心跳消息豁免）
-                if (_rateLimiter != null && command.MessageType == MessageType.Business)
-                {
-                    if (!_rateLimiter.TryAcquire())
-                    {
-                        _statistics.RecordRateLimited();
-                        GameLogger.LogWarning($"[GameClient] 发送速率超限，消息被丢弃: {CmdKit.ToString(command.CmdMerge)}");
-                        return;
-                    }
-                }
-
-                var message = CreateExternalMessage(command);
-                var packet = PacketCodec.Encode(message);
-                _channel.Send(packet);
-
-                // 记录统计 (心跳消息特殊处理)
-                if (command.MessageType == MessageType.Heartbeat)
-                {
-                    _statistics.RecordHeartbeatSend();
-                }
-                else
-                {
-                    _statistics.RecordSend(packet.Length, command.CmdMerge, command.MsgId);
-                }
-            }
-            finally
-            {
-                ReferencePool<RequestCommand>.Despawn(command);
-            }
-        }
-
-        private ExternalMessage CreateExternalMessage(RequestCommand command)
-        {
-            return new ExternalMessage
-            {
-                MessageType = command.MessageType,
-                CmdMerge = command.CmdMerge,
-                MsgId = command.MsgId,
-                Data = command.Data,
-            };
-        }
-
-        private void OnChannelReceiveMessage(IProtocolChannel channel, byte[] data)
-        {
-            if (_disposed || data == null || data.Length == 0)
-                return;
-
-            try
-            {
-                // 写入缓冲区并尝试解析完整数据包
-                _receiveBuffer.Write(data, 0, data.Length);
-                var messages = _receiveBuffer.ReadPackets();
-
-                foreach (var message in messages)
-                {
-                    ProcessMessage(message);
-                }
-            }
-            catch (Exception ex)
-            {
-                GameLogger.LogError($"[GameClient] 处理消息失败: {ex.Message}");
-                OnError?.Invoke(ex);
-            }
-        }
-
-        private void ProcessMessage(ExternalMessage message)
-        {
-            if (message == null)
-                return;
-
-            // 判断是心跳响应还是业务消息
-            if (message.MessageType == MessageType.Heartbeat)
-            {
-                // 心跳响应，重置超时计数
-                _heartbeatTimeoutCount = 0;
-                _statistics.RecordHeartbeatReceive();
-                GameLogger.Log("[GameClient] 收到心跳响应");
-                return;
-            }
-
-            // 时间同步
-            if (message.MessageType == MessageType.TimeSync)
-            {
-                var timeSyncMsg = TimeSyncMessage.Parser.ParseFrom(message.Data);
-                TimeUtils.UpdateSync(timeSyncMsg.ClientTime, timeSyncMsg.ServerTime);
-                return;
-            }
-
-            // 断线通知
-            if (message.MessageType == MessageType.Disconnect)
-            {
-                // 解析断线通知
-                var disconnectNotify = DisconnectNotify.Parser.ParseFrom(message.Data);
-
-                GameLogger.LogWarning(
-                    $"[GameClient] 收到服务器断线通知: Reason={disconnectNotify.Reason}, Message={disconnectNotify.Message}"
-                );
-
-                // 触发断线通知事件，让上层处理（如显示提示 UI）
-                OnDisconnectNotify?.Invoke(disconnectNotify);
-
-                // 根据断线原因决定是否允许自动重连
-                if (!IsReconnectAllowed(disconnectNotify.Reason))
-                {
-                    // 禁止重连的情况，直接关闭客户端
-                    GameLogger.Log($"[GameClient] 断线原因 {disconnectNotify.Reason} 不允许重连，关闭客户端");
-                    Close();
-                }
-                else
-                {
-                    // 允许重连的情况，正常断开（会触发自动重连）
-                    _channel?.Disconnect();
-                }
-
-                return;
-            }
-
-            // 记录接收统计
-            int dataSize = message.Data?.Length ?? 0;
-            bool isSuccess = message.ResponseStatus == 0;
-            string errorInfo = isSuccess ? null : $"Status: {message.ResponseStatus}";
-            _statistics.RecordReceive(dataSize, message.CmdMerge, message.MsgId, null, isSuccess, errorInfo);
-
-            // 创建响应消息
-            var response = ReferencePool<ResponseMessage>.Spawn();
-            response.Initialize(message);
-
-            // 尝试匹配等待的请求
-            if (_pendingRequests.TryRemove(message.MsgId, out var tcs))
-            {
-                // 匹配到请求，设置响应结果
-                tcs.TrySetResult(response);
-            }
-
-            // 触发消息接收事件（所有业务消息都触发，包括请求响应和服务器推送）
-            OnMessageReceived?.Invoke(message);
-            
-            // 归还响应消息
-            ReferencePool<ResponseMessage>.Despawn(response);
         }
 
         private void OnChannelDisconnect(IProtocolChannel channel)
@@ -520,7 +299,7 @@ namespace Pisces.Client.Network
                 return;
 
             GameLogger.LogWarning("[GameClient] 连接已断开");
-            State = ConnectionState.Disconnected;
+            _stateMachine.TryTransition(ConnectionState.Disconnected, out _);
             _statistics.RecordDisconnected();
 
             ClearPendingRequests(new OperationCanceledException("连接断开"));
@@ -531,172 +310,6 @@ namespace Pisces.Client.Network
                 StartReconnect();
             }
         }
-
-        #region Heartbeat
-
-        private void StartHeartbeat()
-        {
-            StopHeartbeat();
-
-            _heartbeatCts = new CancellationTokenSource();
-            _heartbeatTimeoutCount = 0;
-
-            HeartbeatLoop(_heartbeatCts.Token).Forget();
-        }
-
-        private void StopHeartbeat()
-        {
-            _heartbeatCts?.Cancel();
-            _heartbeatCts?.Dispose();
-            _heartbeatCts = null;
-        }
-
-        private async UniTaskVoid HeartbeatLoop(CancellationToken cancellationToken)
-        {
-            while (!cancellationToken.IsCancellationRequested && IsConnected && Application.isPlaying)
-            {
-                try
-                {
-                    await UniTask.Delay(
-                        TimeSpan.FromSeconds(_options.HeartbeatIntervalSec),
-                        cancellationToken: cancellationToken
-                    );
-
-                    // Unity 退出或连接断开时停止
-                    if (!Application.isPlaying || !IsConnected)
-                        break;
-
-                    // 检查是否超时
-                    if (_heartbeatTimeoutCount >= _options.HeartbeatTimeoutCount)
-                    {
-                        GameLogger.LogWarning(
-                            $"[GameClient] 心跳超时 ({_heartbeatTimeoutCount} 次)"
-                        );
-                        _channel?.Disconnect();
-                        break;
-                    }
-
-                    // 发送心跳
-                    var heartbeat = RequestCommand.Heartbeat();
-                    SendRequest(heartbeat);
-                    _heartbeatTimeoutCount++;
-
-                    GameLogger.Log("[GameClient] 已发送心跳");
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    GameLogger.LogError($"[GameClient] 心跳错误: {ex.Message}");
-                }
-            }
-        }
-
-        #endregion
-
-        #region Reconnect
-
-        /// <summary>
-        /// 判断断线原因是否允许自动重连
-        /// </summary>
-        /// <param name="reason">断线原因</param>
-        /// <returns>是否允许重连</returns>
-        private static bool IsReconnectAllowed(DisconnectReason reason)
-        {
-            return reason switch
-            {
-                // 不允许重连的情况
-                DisconnectReason.DuplicateLogin => false,        // 重复登录（被顶号）
-                DisconnectReason.Banned => false,                // 被封禁
-                DisconnectReason.ServerMaintenance => false,     // 服务器维护
-                DisconnectReason.AuthenticationFailed => false,  // 认证失败
-                DisconnectReason.ServerClose => false,           // 服务器关闭
-
-                // 允许重连的情况
-                DisconnectReason.Unknown => true,                // 未知原因
-                DisconnectReason.ClientClose => true,            // 客户端关闭（一般不会从服务器发来）
-                DisconnectReason.IdleTimeout => true,            // 空闲超时
-                DisconnectReason.NetworkError => true,           // 网络错误
-
-                // 默认允许重连
-                _ => true
-            };
-        }
-
-        private void StartReconnect()
-        {
-            if (_isClosed || _disposed)
-                return;
-
-            StopReconnect();
-
-            _reconnectCts = new CancellationTokenSource();
-            State = ConnectionState.Reconnecting;
-
-            ReconnectLoop(_reconnectCts.Token).Forget();
-        }
-
-        private void StopReconnect()
-        {
-            _reconnectCts?.Cancel();
-            _reconnectCts?.Dispose();
-            _reconnectCts = null;
-        }
-
-        private async UniTaskVoid ReconnectLoop(CancellationToken cancellationToken)
-        {
-            while (!cancellationToken.IsCancellationRequested && !_isClosed && Application.isPlaying)
-            {
-                // 检查重连次数
-                if (_options.MaxReconnectCount > 0 && _reconnectCount >= _options.MaxReconnectCount)
-                {
-                    GameLogger.LogWarning($"[GameClient] 达到最大重连次数 ({_reconnectCount})");
-                    State = ConnectionState.Disconnected;
-                    break;
-                }
-
-                _reconnectCount++;
-                _statistics.RecordReconnect();
-                GameLogger.Log($"[GameClient] 正在重连... (第 {_reconnectCount} 次尝试)");
-
-                try
-                {
-                    await UniTask.Delay(
-                        TimeSpan.FromSeconds(_options.ReconnectIntervalSec),
-                        cancellationToken: cancellationToken
-                    );
-
-                    // 再次检查 Unity 是否仍在运行
-                    if (!Application.isPlaying)
-                        break;
-
-                    // 重置状态
-                    State = ConnectionState.Connecting;
-
-                    // 尝试连接
-                    await ConnectAsync();
-
-                    if (IsConnected)
-                    {
-                        GameLogger.Log("[GameClient] 重连成功");
-                        break;
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    GameLogger.LogWarning($"[GameClient] 重连失败: {ex.Message}");
-                    State = ConnectionState.Reconnecting;
-                }
-            }
-        }
-
-        #endregion
 
         private void ClearPendingRequests(Exception exception)
         {
@@ -722,6 +335,9 @@ namespace Pisces.Client.Network
 
             if (disposing)
             {
+                // 取消订阅状态机事件
+                _stateMachine.OnStateChanged -= HandleStateMachineStateChanged;
+
                 Close();
 
                 if (_channel is IDisposable disposableChannel)
@@ -735,6 +351,7 @@ namespace Pisces.Client.Network
 
                 _heartbeatCts?.Dispose();
                 _reconnectCts?.Dispose();
+                _cleanupCts?.Dispose();
             }
 
             GameLogger.Log("[GameClient] 已释放");

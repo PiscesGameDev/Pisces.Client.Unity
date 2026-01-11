@@ -1,0 +1,316 @@
+using System;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using Pisces.Client.Network.Channel;
+using Pisces.Client.Sdk;
+using Pisces.Client.Utils;
+using Pisces.Protocol;
+
+namespace Pisces.Client.Network
+{
+    /// <summary>
+    /// GameClient - 消息收发部分
+    /// </summary>
+    public partial class GameClient
+    {
+        /// <summary>
+        /// 消息发送失败事件
+        /// 参数：CmdMerge, MsgId, 失败原因
+        /// </summary>
+        public event Action<int, int, SendResult> OnSendFailed;
+
+        public async UniTask SendAsync(
+            ExternalMessage message,
+            CancellationToken cancellationToken = default
+        )
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(GameClient));
+
+            if (!IsConnected)
+                throw new InvalidOperationException("未连接");
+
+            if (message == null)
+                throw new ArgumentNullException(nameof(message));
+
+            try
+            {
+                var packet = PacketCodec.Encode(message);
+                if (!_channel.Send(packet))
+                {
+                    throw new InvalidOperationException("通道发送失败");
+                }
+
+                await UniTask.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                GameLogger.LogError($"[GameClient] 发送失败: {ex.Message}");
+                OnError?.Invoke(ex);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 发送请求并等待响应
+        /// </summary>
+        /// <param name="command">请求命令</param>
+        /// <param name="cancellationToken">取消令牌</param>
+        /// <returns>响应消息</returns>
+        public async UniTask<ResponseMessage> RequestAsync(
+            RequestCommand command,
+            CancellationToken cancellationToken = default
+        )
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(GameClient));
+
+            if (!IsConnected)
+                throw new InvalidOperationException("未连接");
+
+            if (command == null)
+                throw new ArgumentNullException(nameof(command));
+
+            var tcs = new UniTaskCompletionSource<ResponseMessage>();
+
+            // 注册等待响应
+            if (
+                command.MessageType == MessageType.Business
+                && !_pendingRequests.TryAdd(command.MsgId, tcs)
+            )
+            {
+                throw new InvalidOperationException($"重复的 MsgId: {command.MsgId}");
+            }
+
+            try
+            {
+                // 发送请求
+                var message = CreateExternalMessage(command);
+                var packet = PacketCodec.Encode(message);
+
+                if (!_channel.Send(packet))
+                {
+                    throw new InvalidOperationException("通道发送失败");
+                }
+
+                // 记录统计
+                _statistics.RecordSend(packet.Length, command.CmdMerge, command.MsgId);
+
+                // 等待响应（带超时）
+                using var timeoutCts = new CancellationTokenSource(_options.RequestTimeoutMs);
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+                    cancellationToken,
+                    timeoutCts.Token
+                );
+
+                var response = await tcs.Task.AttachExternalCancellation(linkedCts.Token);
+                return response;
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new TimeoutException(
+                    $"Request timeout after {_options.RequestTimeoutMs}ms (MsgId: {command.MsgId})"
+                );
+            }
+            finally
+            {
+                _pendingRequests.TryRemove(command.MsgId, out _);
+
+                // 归还到对象池
+                ReferencePool<RequestCommand>.Despawn(command);
+            }
+        }
+
+        /// <summary>
+        /// 发送请求（仅发送，不等待响应）
+        /// </summary>
+        /// <returns>发送结果</returns>
+        public SendResult SendRequest(RequestCommand command)
+        {
+            if (command == null)
+            {
+                return SendResult.InvalidMessage;
+            }
+
+            if (_disposed)
+            {
+                NotifySendFailed(command, SendResult.ClientClosed);
+                ReferencePool<RequestCommand>.Despawn(command);
+                return SendResult.ClientClosed;
+            }
+
+            if (!IsConnected)
+            {
+                NotifySendFailed(command, SendResult.NotConnected);
+                ReferencePool<RequestCommand>.Despawn(command);
+                return SendResult.NotConnected;
+            }
+
+            try
+            {
+                // 流量控制（心跳消息豁免）
+                if (_rateLimiter != null && command.MessageType == MessageType.Business)
+                {
+                    if (!_rateLimiter.TryAcquire())
+                    {
+                        _statistics.RecordRateLimited();
+                        NotifySendFailed(command, SendResult.RateLimited);
+                        return SendResult.RateLimited;
+                    }
+                }
+
+                var message = CreateExternalMessage(command);
+                var packet = PacketCodec.Encode(message);
+
+                if (!_channel.Send(packet))
+                {
+                    NotifySendFailed(command, SendResult.ChannelError);
+                    return SendResult.ChannelError;
+                }
+
+                // 记录统计 (心跳消息特殊处理)
+                if (command.MessageType == MessageType.Heartbeat)
+                {
+                    _statistics.RecordHeartbeatSend();
+                }
+                else
+                {
+                    _statistics.RecordSend(packet.Length, command.CmdMerge, command.MsgId);
+                }
+
+                return SendResult.Success;
+            }
+            finally
+            {
+                ReferencePool<RequestCommand>.Despawn(command);
+            }
+        }
+
+        /// <summary>
+        /// 通知发送失败
+        /// </summary>
+        private void NotifySendFailed(RequestCommand command, SendResult result)
+        {
+            GameLogger.LogWarning(
+                $"[GameClient] 发送失败: {CmdKit.ToString(command.CmdMerge)}, MsgId={command.MsgId}, 原因={result}"
+            );
+
+            _statistics.RecordSendFailed();
+            OnSendFailed?.Invoke(command.CmdMerge, command.MsgId, result);
+        }
+
+        private ExternalMessage CreateExternalMessage(RequestCommand command)
+        {
+            return new ExternalMessage
+            {
+                MessageType = command.MessageType,
+                CmdMerge = command.CmdMerge,
+                MsgId = command.MsgId,
+                Data = command.Data,
+            };
+        }
+
+        private void OnChannelReceiveMessage(IProtocolChannel channel, byte[] data)
+        {
+            if (_disposed || data == null || data.Length == 0)
+                return;
+
+            try
+            {
+                // 写入缓冲区并尝试解析完整数据包
+                _receiveBuffer.Write(data, 0, data.Length);
+                var messages = _receiveBuffer.ReadPackets();
+
+                foreach (var message in messages)
+                {
+                    ProcessMessage(message);
+                }
+            }
+            catch (Exception ex)
+            {
+                GameLogger.LogError($"[GameClient] 处理消息失败: {ex.Message}");
+                OnError?.Invoke(ex);
+            }
+        }
+
+        private void ProcessMessage(ExternalMessage message)
+        {
+            if (message == null)
+                return;
+
+            // 判断是心跳响应还是业务消息
+            if (message.MessageType == MessageType.Heartbeat)
+            {
+                // 心跳响应，重置超时计数
+                _heartbeatTimeoutCount = 0;
+                _statistics.RecordHeartbeatReceive();
+                GameLogger.Log("[GameClient] 收到心跳响应");
+                return;
+            }
+
+            // 时间同步
+            if (message.MessageType == MessageType.TimeSync)
+            {
+                var timeSyncMsg = TimeSyncMessage.Parser.ParseFrom(message.Data);
+                TimeUtils.UpdateSync(timeSyncMsg.ClientTime, timeSyncMsg.ServerTime);
+                return;
+            }
+
+            // 断线通知
+            if (message.MessageType == MessageType.Disconnect)
+            {
+                ProcessDisconnectNotify(message);
+                return;
+            }
+
+            // 记录接收统计
+            int dataSize = message.Data?.Length ?? 0;
+            bool isSuccess = message.ResponseStatus == 0;
+            string errorInfo = isSuccess ? null : $"Status: {message.ResponseStatus}";
+            _statistics.RecordReceive(dataSize, message.CmdMerge, message.MsgId, null, isSuccess, errorInfo);
+
+            // 创建响应消息
+            var response = ReferencePool<ResponseMessage>.Spawn();
+            response.Initialize(message);
+
+            // 尝试匹配等待的请求
+            if (_pendingRequests.TryRemove(message.MsgId, out var tcs))
+            {
+                // 匹配到请求，设置响应结果
+                tcs.TrySetResult(response);
+            }
+
+            // 触发消息接收事件（所有业务消息都触发，包括请求响应和服务器推送）
+            OnMessageReceived?.Invoke(message);
+
+            // 归还响应消息
+            ReferencePool<ResponseMessage>.Despawn(response);
+        }
+
+        private void ProcessDisconnectNotify(ExternalMessage message)
+        {
+            // 解析断线通知
+            var disconnectNotify = DisconnectNotify.Parser.ParseFrom(message.Data);
+
+            GameLogger.LogWarning(
+                $"[GameClient] 收到服务器断线通知: Reason={disconnectNotify.Reason}, Message={disconnectNotify.Message}"
+            );
+
+            // 触发断线通知事件，让上层处理（如显示提示 UI）
+            OnDisconnectNotify?.Invoke(disconnectNotify);
+
+            // 根据断线原因决定是否允许自动重连
+            if (!IsReconnectAllowed(disconnectNotify.Reason))
+            {
+                // 禁止重连的情况，直接关闭客户端
+                GameLogger.Log($"[GameClient] 断线原因 {disconnectNotify.Reason} 不允许重连，关闭客户端");
+                Close();
+            }
+            else
+            {
+                // 允许重连的情况，正常断开（会触发自动重连）
+                _channel?.Disconnect();
+            }
+        }
+    }
+}

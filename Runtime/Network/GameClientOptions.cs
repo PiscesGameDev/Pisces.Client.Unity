@@ -58,14 +58,31 @@ namespace Pisces.Client.Network
         public int MaxReconnectCount = 5;
 
         /// <summary>
-        /// 接收缓冲区大小
+        /// 接收缓冲区大小（Socket 级别）
         /// </summary>
         public int ReceiveBufferSize = 65536;
 
         /// <summary>
-        /// 发送缓冲区大小
+        /// 发送缓冲区大小（Socket 级别）
         /// </summary>
         public int SendBufferSize = 65536;
+
+        #region PacketBuffer 配置
+
+        /// <summary>
+        /// PacketBuffer 初始大小（字节）
+        /// 默认 4KB，可满足大多数消息需求
+        /// </summary>
+        public int PacketBufferInitialSize = 4096;
+
+        /// <summary>
+        /// PacketBuffer 收缩阈值
+        /// 当容量超过此大小且使用率低于 25% 时，自动收缩
+        /// 默认 64KB
+        /// </summary>
+        public int PacketBufferShrinkThreshold = 65536;
+
+        #endregion
 
         /// <summary>
         /// 是否启用日志
@@ -125,6 +142,8 @@ namespace Pisces.Client.Network
                 MaxReconnectCount = MaxReconnectCount,
                 ReceiveBufferSize = ReceiveBufferSize,
                 SendBufferSize = SendBufferSize,
+                PacketBufferInitialSize = PacketBufferInitialSize,
+                PacketBufferShrinkThreshold = PacketBufferShrinkThreshold,
                 EnableLog = EnableLog,
                 EnableRateLimit = EnableRateLimit,
                 MaxSendRate = MaxSendRate,

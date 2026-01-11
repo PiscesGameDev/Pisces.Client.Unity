@@ -57,6 +57,7 @@ namespace Pisces.Client.Network.Channel
         public event Action<IProtocolChannel> SendMessageEvent;
         public event Action<IProtocolChannel, byte[]> ReceiveMessageEvent;
         public event Action<IProtocolChannel> DisconnectServerEvent;
+        public event Action<IProtocolChannel, byte[], SendFailureReason> SendFailedEvent;
 
         /// <summary>
         /// 客户端 Socket
@@ -277,19 +278,32 @@ namespace Pisces.Client.Network.Channel
             }
         }
 
-        public virtual void Send(byte[] data)
+        public virtual bool Send(byte[] data)
         {
             if (data == null || data.Length == 0)
-                return;
+            {
+                GameLogger.LogWarning($"[{ChannelType}Channel] 无法发送：数据无效");
+                InvokeOnMainThread(() => SendFailedEvent?.Invoke(this, data, SendFailureReason.InvalidData));
+                return false;
+            }
+
+            if (_isDisposed)
+            {
+                GameLogger.LogWarning($"[{ChannelType}Channel] 无法发送：通道已关闭");
+                InvokeOnMainThread(() => SendFailedEvent?.Invoke(this, data, SendFailureReason.ChannelClosed));
+                return false;
+            }
 
             if (!IsConnected)
             {
                 GameLogger.LogWarning($"[{ChannelType}Channel] 无法发送：未连接");
-                return;
+                InvokeOnMainThread(() => SendFailedEvent?.Invoke(this, data, SendFailureReason.NotConnected));
+                return false;
             }
 
             _sendQueue.Enqueue(data);
             _sendSignal.Set(); // 通知发送线程
+            return true;
         }
 
         /// <summary>

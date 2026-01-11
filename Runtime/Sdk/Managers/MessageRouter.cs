@@ -19,6 +19,13 @@ namespace Pisces.Client.Sdk
         /// </summary>
         private readonly Dictionary<int, Action<ExternalMessage>> _routes = new();
 
+        /// <summary>
+        /// 分发异常事件
+        /// 当订阅者处理消息时发生异常时触发
+        /// 参数：cmdMerge, 异常
+        /// </summary>
+        public event Action<int, Exception> OnDispatchError;
+
         #region Subscribe - 返回 IDisposable
 
         /// <summary>
@@ -143,6 +150,7 @@ namespace Pisces.Client.Sdk
 
         /// <summary>
         /// 分发消息到订阅者
+        /// 使用 GetInvocationList 遍历所有订阅者，确保单个订阅者异常不影响其他订阅者
         /// </summary>
         /// <param name="message">接收到的消息</param>
         public void Dispatch(ExternalMessage message)
@@ -153,16 +161,33 @@ namespace Pisces.Client.Sdk
             if (!_routes.TryGetValue(message.CmdMerge, out var handler) || handler == null)
                 return;
 
-            try
+            // 获取所有订阅者
+            var invocationList = handler.GetInvocationList();
+
+            foreach (var subscriber in invocationList)
             {
-                handler.Invoke(message);
-            }
-            catch (Exception ex)
-            {
-                GameLogger.LogError(
-                    $"[MessageRouter] 处理器异常 cmdMerge {message.CmdMerge}: {ex.Message}"
-                );
-                throw; // 重新抛出异常，让外层处理
+                try
+                {
+                    ((Action<ExternalMessage>)subscriber).Invoke(message);
+                }
+                catch (Exception ex)
+                {
+                    GameLogger.LogError(
+                        $"[MessageRouter] 处理器异常 cmdMerge {message.CmdMerge}: {ex.Message}\n{ex.StackTrace}"
+                    );
+
+                    // 触发异常事件，让外部可以处理（如统计、上报等）
+                    try
+                    {
+                        OnDispatchError?.Invoke(message.CmdMerge, ex);
+                    }
+                    catch
+                    {
+                        // 忽略事件处理器自身的异常
+                    }
+
+                    // 继续处理其他订阅者，不中断分发流程
+                }
             }
         }
 
