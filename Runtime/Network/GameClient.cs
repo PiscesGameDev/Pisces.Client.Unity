@@ -6,6 +6,7 @@ using Pisces.Client.Network.Channel;
 using Pisces.Client.Sdk;
 using Pisces.Client.Utils;
 using Pisces.Protocol;
+using UnityEngine;
 
 namespace Pisces.Client.Network
 {
@@ -403,6 +404,10 @@ namespace Pisces.Client.Network
             if (_disposed || _isClosed)
                 return;
 
+            // Unity 退出 Play Mode 时不处理
+            if (!Application.isPlaying)
+                return;
+
             GameLogger.LogWarning("[GameClient] 连接已断开");
             State = ConnectionState.Disconnected;
 
@@ -436,7 +441,7 @@ namespace Pisces.Client.Network
 
         private async UniTaskVoid HeartbeatLoop(CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested && IsConnected)
+            while (!cancellationToken.IsCancellationRequested && IsConnected && Application.isPlaying)
             {
                 try
                 {
@@ -445,7 +450,8 @@ namespace Pisces.Client.Network
                         cancellationToken: cancellationToken
                     );
 
-                    if (!IsConnected)
+                    // Unity 退出或连接断开时停止
+                    if (!Application.isPlaying || !IsConnected)
                         break;
 
                     // 检查是否超时
@@ -529,7 +535,7 @@ namespace Pisces.Client.Network
 
         private async UniTaskVoid ReconnectLoop(CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested && !_isClosed)
+            while (!cancellationToken.IsCancellationRequested && !_isClosed && Application.isPlaying)
             {
                 // 检查重连次数
                 if (_options.MaxReconnectCount > 0 && _reconnectCount >= _options.MaxReconnectCount)
@@ -548,6 +554,10 @@ namespace Pisces.Client.Network
                         TimeSpan.FromSeconds(_options.ReconnectIntervalSec),
                         cancellationToken: cancellationToken
                     );
+
+                    // 再次检查 Unity 是否仍在运行
+                    if (!Application.isPlaying)
+                        break;
 
                     // 重置状态
                     State = ConnectionState.Connecting;
