@@ -14,8 +14,7 @@ namespace Pisces.Client.Editor.Settings
     public class PiscesSettingsProvider : SettingsProvider
     {
         private const string SettingsPath = "Project/Pisces Client";
-        private const string SettingsAssetPath = "Assets/Resources/PiscesSettings.asset";
-
+        
         private SerializedObject _serializedSettings;
         private PiscesSettings _settings;
 
@@ -69,7 +68,7 @@ namespace Pisces.Client.Editor.Settings
 
         private void InitializeSettings()
         {
-            _settings = GetOrCreateSettings();
+            _settings =  PiscesSettings.Instance;
             if (_settings != null)
             {
                 _serializedSettings = new SerializedObject(_settings);
@@ -133,11 +132,6 @@ namespace Pisces.Client.Editor.Settings
             if (_serializedSettings == null || _settings == null)
             {
                 InitializeSettings();
-                if (_serializedSettings == null)
-                {
-                    DrawCreateSettingsUI();
-                    return;
-                }
             }
 
             InitializeStyles();
@@ -177,21 +171,7 @@ namespace Pisces.Client.Editor.Settings
 
             _serializedSettings.ApplyModifiedProperties();
         }
-
-        private void DrawCreateSettingsUI()
-        {
-            EditorGUILayout.Space(20);
-            EditorGUILayout.HelpBox(
-                "未找到 Pisces Client 配置文件。\n点击下方按钮创建配置。",
-                MessageType.Info);
-            EditorGUILayout.Space(10);
-
-            if (GUILayout.Button("创建配置文件", GUILayout.Height(30)))
-            {
-                CreateSettingsAsset();
-                InitializeSettings();
-            }
-        }
+        
 
         private void DrawServerEnvironmentSection()
         {
@@ -527,40 +507,10 @@ namespace Pisces.Client.Editor.Settings
         }
 
         #region Settings Asset Management
-
-        private static PiscesSettings GetOrCreateSettings()
-        {
-            var settings = AssetDatabase.LoadAssetAtPath<PiscesSettings>(SettingsAssetPath);
-            if (settings == null)
-            {
-                settings = Resources.Load<PiscesSettings>("PiscesSettings");
-            }
-            return settings;
-        }
-
-        private static void CreateSettingsAsset()
-        {
-            var settings = ScriptableObject.CreateInstance<PiscesSettings>();
-            settings.ResetToDefaults();
-
-            // Ensure directory exists
-            var directory = Path.GetDirectoryName(SettingsAssetPath);
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            AssetDatabase.CreateAsset(settings, SettingsAssetPath);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-
-            Debug.Log($"[Pisces] 已创建配置文件: {SettingsAssetPath}");
-        }
-
         [SettingsProvider]
         public static SettingsProvider CreatePiscesSettingsProvider()
         {
-            return new PiscesSettingsProvider(SettingsPath, SettingsScope.Project);
+            return new PiscesSettingsProvider(SettingsPath);
         }
 
         #endregion

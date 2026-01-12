@@ -35,10 +35,7 @@ namespace Pisces.Protocol
         private static string DefaultFormatter(int cmd, int subCmd, int mergedCmd)
         {
             var merged = Merge(cmd, subCmd);
-            if (_cmdMapping.TryGetValue(merged, out var title))
-                return $"[{title}] cmd:{cmd} sub:{subCmd}";
-            
-            return $"[{cmd}-{subCmd}]";
+            return _cmdMapping.TryGetValue(merged, out var title) ? $"【cmd:{cmd}-sub:{subCmd}-merged:{merged}】[{title}]】 " : $"[{cmd}-{subCmd}-{merged}]";
         }
         
         // 字符串表示

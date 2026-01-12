@@ -50,9 +50,7 @@ namespace Pisces.Client.Settings
     /// </summary>
     public class PiscesSettings : ScriptableObject
     {
-        private const string ResourcePath = "PiscesSettings";
-        private const string SettingsPath = "Assets/Resources/PiscesSettings.asset";
-
+        
         private static PiscesSettings _instance;
 
         /// <summary>
@@ -64,25 +62,31 @@ namespace Pisces.Client.Settings
             {
                 if (_instance == null)
                 {
-                    _instance = Resources.Load<PiscesSettings>(ResourcePath);
-
-#if UNITY_EDITOR
-                    if (_instance == null)
-                    {
-                        _instance = CreateInstance<PiscesSettings>();
-                        _instance.ResetToDefaults();
-                    }
-#endif
+                    _instance = LoadOrCreateInstance();
                 }
-
                 return _instance;
             }
         }
 
-        /// <summary>
-        /// 资源路径（供编辑器使用）
-        /// </summary>
-        public static string AssetPath => SettingsPath;
+        private static PiscesSettings LoadOrCreateInstance()
+        {
+            var settings = Resources.Load<PiscesSettings>(SettingsPaths.PiscesSettingsResourcePath);
+
+            // 如果在编辑器中未找到，自动创建
+            if (settings == null)
+            {
+                settings = CreateInstance<PiscesSettings>();
+                settings.ResetToDefaults();
+#if UNITY_EDITOR
+                // 保存到 Resources 文件夹
+                UnityEditor.AssetDatabase.CreateAsset(settings, SettingsPaths.PiscesSettingsAssetPath);
+                UnityEditor.AssetDatabase.SaveAssets();
+                UnityEditor.AssetDatabase.Refresh();
+#endif
+            }
+            return settings;
+        }
+
 
         #region Server Environment
 
