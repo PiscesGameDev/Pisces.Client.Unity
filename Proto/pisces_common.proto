@@ -38,13 +38,13 @@ message DisconnectNotify {
 
 // 外部消息包裹
 message ExternalMessage {
-    MessageType message_type = 1;   // 消息类型
+    MessageType message_type = 1;   // 消息类型,必填
     int32 protocol_switch = 2;      // 协议开关(可以忽略)
-    int32 cmd_merge = 3;            // 合并命令号
+    int32 cmd_merge = 3;            // 合并命令号, 业务消息必填
     int32 response_status = 4;      // 响应码: 0=成功
     string valid_msg = 5;           // 错误描述
     bytes data = 6;                 // 业务数据（Protobuf 序列化）
-    int32 msg_id = 7;               // 消息 ID（请求/响应配对）
+    int32 msg_id = 7;               // 消息 ID（请求/响应配对）, 客户端填写, 服务端返回
 }
 
 // 时间同步消息
