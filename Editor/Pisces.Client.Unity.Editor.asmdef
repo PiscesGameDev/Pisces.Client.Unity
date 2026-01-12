@@ -1,6 +1,6 @@
 {
     "name": "Pisces.Client.Unity.Editor",
-    "rootNamespace": "Pisces.Client.Editor",
+    "rootNamespace": "",
     "references": [
         "GUID:f29902d9e215ab442a773218e1d41bc4"
     ],

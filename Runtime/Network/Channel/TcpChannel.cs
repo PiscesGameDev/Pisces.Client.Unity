@@ -1,5 +1,6 @@
 using System;
 using System.Net.Sockets;
+using Pisces.Client.Network.Core;
 
 namespace Pisces.Client.Network.Channel
 {
@@ -39,7 +40,7 @@ namespace Pisces.Client.Network.Channel
         /// 数据包缓冲区（处理粘包/拆包）
         /// 使用默认初始大小（4KB），支持自动扩容和收缩
         /// </summary>
-        private readonly PacketBuffer _packetBuffer = new PacketBuffer();
+        private readonly PacketBuffer _packetBuffer = new();
 
         public override ChannelType ChannelType => ChannelType.Tcp;
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Pisces.Client.Network;
+using Pisces.Client.Network.Core;
 using Pisces.Client.Settings;
 using Pisces.Client.Sdk;
 using Pisces.Client.Utils;

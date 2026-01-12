@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Pisces.Client.Network;
 using Pisces.Client.Network.Channel;
+using Pisces.Client.Network;
 using UnityEngine;
 
 namespace Pisces.Client.Settings

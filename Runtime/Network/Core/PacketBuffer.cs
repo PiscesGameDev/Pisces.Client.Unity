@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using Pisces.Protocol;
 
-namespace Pisces.Client.Network
+namespace Pisces.Client.Network.Core
 {
     /// <summary>
     /// 数据包缓冲区（处理粘包/拆包）

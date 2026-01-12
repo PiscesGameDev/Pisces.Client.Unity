@@ -16,7 +16,7 @@ namespace Pisces.Client.Network.Channel
         /// <summary>
         /// 默认接收缓冲区大小
         /// </summary>
-        protected const int DefaultReceiveBufferSize = 65536;
+        private const int DefaultReceiveBufferSize = 65536;
 
         /// <summary>
         /// 线程休眠时间（毫秒）
@@ -41,18 +41,13 @@ namespace Pisces.Client.Network.Channel
         private readonly AutoResetEvent _sendSignal = new(false);
 
         /// <summary>
-        /// 接收到的消息队列（用于跨线程传递到主线程）
-        /// </summary>
-        private readonly ConcurrentQueue<byte[]> _receiveQueue = new();
-
-        /// <summary>
         /// 同步上下文（用于回调到主线程）
         /// </summary>
         private SynchronizationContext _mainThreadContext;
 
         public abstract ChannelType ChannelType { get; }
 
-        public bool IsConnected => _isConnected && Client != null && Client.Connected;
+        public bool IsConnected => _isConnected && Client is { Connected: true };
 
         public event Action<IProtocolChannel> SendMessageEvent;
         public event Action<IProtocolChannel, byte[]> ReceiveMessageEvent;
@@ -321,7 +316,7 @@ namespace Pisces.Client.Network.Channel
         /// <summary>
         /// 在主线程上执行回调
         /// </summary>
-        protected void InvokeOnMainThread(Action action)
+        private void InvokeOnMainThread(Action action)
         {
             if (action == null)
                 return;
@@ -334,17 +329,6 @@ namespace Pisces.Client.Network.Channel
             {
                 // 如果没有同步上下文，直接执行
                 action();
-            }
-        }
-
-        /// <summary>
-        /// 处理主线程回调队列（需要在 Update 中调用）
-        /// </summary>
-        public void ProcessCallbacks()
-        {
-            while (_receiveQueue.TryDequeue(out var data))
-            {
-                ReceiveMessageEvent?.Invoke(this, data);
             }
         }
 
@@ -375,7 +359,6 @@ namespace Pisces.Client.Network.Channel
 
                 // 清空队列
                 while (_sendQueue.TryDequeue(out _)) { }
-                while (_receiveQueue.TryDequeue(out _)) { }
             }
 
             GameLogger.Log($"[{ChannelType}Channel] 已释放");

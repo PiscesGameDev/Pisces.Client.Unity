@@ -1,7 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Pisces.Client.Network.Channel;
+using Pisces.Client.Network.Core;
 using Pisces.Client.Sdk;
 using Pisces.Client.Utils;
 using Pisces.Protocol;
@@ -71,15 +73,24 @@ namespace Pisces.Client.Network
             if (command == null)
                 throw new ArgumentNullException(nameof(command));
 
-            var tcs = new UniTaskCompletionSource<ResponseMessage>();
+            PendingRequestInfo pendingInfo = null;
 
-            // 注册等待响应
-            if (
-                command.MessageType == MessageType.Business
-                && !_pendingRequests.TryAdd(command.MsgId, tcs)
-            )
+            // 只有业务消息才需要等待响应
+            if (command.MessageType == MessageType.Business)
             {
-                throw new InvalidOperationException($"重复的 MsgId: {command.MsgId}");
+                var tcs = new UniTaskCompletionSource<ResponseMessage>();
+                pendingInfo = new PendingRequestInfo
+                {
+                    Tcs = tcs,
+                    CreatedTicks = Stopwatch.GetTimestamp(),
+                    CmdMerge = command.CmdMerge,
+                    MsgId = command.MsgId
+                };
+
+                if (!_pendingRequests.TryAdd(command.MsgId, pendingInfo))
+                {
+                    throw new InvalidOperationException($"重复的 MsgId: {command.MsgId}");
+                }
             }
 
             try
@@ -96,6 +107,12 @@ namespace Pisces.Client.Network
                 // 记录统计
                 _statistics.RecordSend(packet.Length, command.CmdMerge, command.MsgId);
 
+                // 非业务消息不需要等待响应
+                if (pendingInfo == null)
+                {
+                    return null;
+                }
+
                 // 等待响应（带超时）
                 using var timeoutCts = new CancellationTokenSource(_options.RequestTimeoutMs);
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
@@ -103,7 +120,7 @@ namespace Pisces.Client.Network
                     timeoutCts.Token
                 );
 
-                var response = await tcs.Task.AttachExternalCancellation(linkedCts.Token);
+                var response = await pendingInfo.Tcs.Task.AttachExternalCancellation(linkedCts.Token);
                 return response;
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -274,10 +291,10 @@ namespace Pisces.Client.Network
             response.Initialize(message);
 
             // 尝试匹配等待的请求
-            if (_pendingRequests.TryRemove(message.MsgId, out var tcs))
+            if (_pendingRequests.TryRemove(message.MsgId, out var pendingInfo))
             {
                 // 匹配到请求，设置响应结果
-                tcs.TrySetResult(response);
+                pendingInfo.Tcs?.TrySetResult(response);
             }
 
             // 触发消息接收事件（所有业务消息都触发，包括请求响应和服务器推送）

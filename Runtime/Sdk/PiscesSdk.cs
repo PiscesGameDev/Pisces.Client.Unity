@@ -3,6 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Google.Protobuf;
 using Pisces.Client.Network;
+using Pisces.Client.Network.Core;
 using Pisces.Client.Settings;
 using Pisces.Client.Utils;
 using Pisces.Protocol;

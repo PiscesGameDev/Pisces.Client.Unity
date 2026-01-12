@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Pisces.Client.Network.Channel;
-using Pisces.Client.Sdk;
+using Pisces.Client.Network.Core;
 using Pisces.Client.Utils;
 using Pisces.Protocol;
 using UnityEngine;
@@ -38,12 +38,9 @@ namespace Pisces.Client.Network
 
         /// <summary>
         /// 等待响应的请求队列
-        /// Key: MsgId, Value: TaskCompletionSource
+        /// Key: MsgId, Value: PendingRequestInfo（包含 TCS 和元数据）
         /// </summary>
-        private readonly ConcurrentDictionary<
-            int,
-            UniTaskCompletionSource<ResponseMessage>
-        > _pendingRequests = new();
+        private readonly ConcurrentDictionary<int, PendingRequestInfo> _pendingRequests = new();
 
         public ConnectionState State => _stateMachine.CurrentState;
 
@@ -315,7 +312,7 @@ namespace Pisces.Client.Network
         {
             foreach (var kvp in _pendingRequests)
             {
-                kvp.Value.TrySetException(exception);
+                kvp.Value.Tcs?.TrySetException(exception);
             }
             _pendingRequests.Clear();
         }

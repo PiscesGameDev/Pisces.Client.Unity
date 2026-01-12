@@ -34,35 +34,5 @@ namespace Pisces.Client.Network.Channel
             GameLogger.Log($"[ChannelFactory] 已创建 {channelType} 通道");
             return channel;
         }
-
-        /// <summary>
-        /// 创建并初始化通道实例
-        /// </summary>
-        /// <param name="channelType">通道类型</param>
-        /// <returns>已初始化的通道实例</returns>
-        public static IProtocolChannel CreateAndInit(ChannelType channelType)
-        {
-            var channel = Create(channelType);
-            channel.OnInit();
-            return channel;
-        }
-
-        /// <summary>
-        /// 创建、初始化并连接通道实例
-        /// </summary>
-        /// <param name="channelType">通道类型</param>
-        /// <param name="host">服务器地址</param>
-        /// <param name="port">服务器端口</param>
-        /// <returns>已连接的通道实例</returns>
-        public static IProtocolChannel CreateAndConnect(
-            ChannelType channelType,
-            string host,
-            int port
-        )
-        {
-            var channel = CreateAndInit(channelType);
-            channel.Connect(host, port);
-            return channel;
-        }
     }
 }

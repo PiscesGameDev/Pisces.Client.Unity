@@ -4,6 +4,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Pisces.Client.Sdk;
 using Pisces.Client.Utils;
+using Pisces.Protocol;
 using UnityEngine;
 
 namespace Pisces.Client.Network
@@ -16,12 +17,14 @@ namespace Pisces.Client.Network
         public UniTaskCompletionSource<ResponseMessage> Tcs { get; set; }
         public long CreatedTicks { get; set; }
         public int CmdMerge { get; set; }
+        public int MsgId { get; set; }
 
         public void Reset()
         {
             Tcs = null;
             CreatedTicks = 0;
             CmdMerge = 0;
+            MsgId = 0;
         }
     }
 
@@ -102,23 +105,45 @@ namespace Pisces.Client.Network
         {
             var now = Stopwatch.GetTimestamp();
             var cleanedCount = 0;
+            var timedOutCount = 0;
 
             foreach (var kvp in _pendingRequests)
             {
-                // 由于我们现在存储的是简单的 TCS，无法获取创建时间
-                // 这里我们依赖外部的超时机制，只清理那些 TCS 已完成但未移除的项
-                if (kvp.Value.Task.Status != UniTaskStatus.Pending)
+                var info = kvp.Value;
+
+                // 检查是否已完成但未移除
+                if (info.Tcs == null || info.Tcs.Task.Status != UniTaskStatus.Pending)
                 {
                     if (_pendingRequests.TryRemove(kvp.Key, out _))
                     {
                         cleanedCount++;
                     }
+                    continue;
+                }
+
+                // 检查是否超时（基于创建时间）
+                var elapsed = now - info.CreatedTicks;
+                if (elapsed > timeoutTicks)
+                {
+                    if (_pendingRequests.TryRemove(kvp.Key, out var removedInfo))
+                    {
+                        // 以超时异常完成 TCS
+                        var timeoutException = new TimeoutException(
+                            $"Request cleanup timeout (MsgId: {removedInfo.MsgId}, Cmd: {CmdKit.ToString(removedInfo.CmdMerge)})"
+                        );
+                        removedInfo.Tcs?.TrySetException(timeoutException);
+                        timedOutCount++;
+
+                        GameLogger.LogWarning(
+                            $"[GameClient] 强制清理超时请求: MsgId={removedInfo.MsgId}, Cmd={CmdKit.ToString(removedInfo.CmdMerge)}"
+                        );
+                    }
                 }
             }
 
-            if (cleanedCount > 0)
+            if (cleanedCount > 0 || timedOutCount > 0)
             {
-                GameLogger.Log($"[GameClient] 清理了 {cleanedCount} 个已完成的待处理请求");
+                GameLogger.Log($"[GameClient] 清理待处理请求: 已完成={cleanedCount}, 超时={timedOutCount}");
             }
 
             // 如果待处理请求数量过多，记录警告

@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Pisces.Client.Network.Core;
 using Pisces.Protocol;
 
 namespace Pisces.Client.Network

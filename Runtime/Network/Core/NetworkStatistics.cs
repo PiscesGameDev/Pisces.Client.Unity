@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Pisces.Protocol;
 using UnityEngine;
 
-namespace Pisces.Client.Network
+namespace Pisces.Client.Network.Core
 {
     /// <summary>
     /// 网络消息日志条目

@@ -1,4 +1,4 @@
-namespace Pisces.Client.Network
+namespace Pisces.Client.Network.Core
 {
     /// <summary>
     /// 连接状态

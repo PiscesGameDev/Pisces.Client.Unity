@@ -16,17 +16,7 @@ namespace Pisces.Client.Network.Channel
         /// WebSocket 客户端
         /// </summary>
         private WebSocket _socket;
-
-        /// <summary>
-        /// 服务器地址
-        /// </summary>
-        private string _serverUrl;
-
-        /// <summary>
-        /// 服务器端口
-        /// </summary>
-        private int _serverPort;
-
+        
         /// <summary>
         /// 是否正在连接
         /// </summary>
@@ -44,6 +34,7 @@ namespace Pisces.Client.Network.Channel
         public event Action<IProtocolChannel> SendMessageEvent;
         public event Action<IProtocolChannel, byte[]> ReceiveMessageEvent;
         public event Action<IProtocolChannel> DisconnectServerEvent;
+        public event Action<IProtocolChannel, byte[], SendFailureReason> SendFailedEvent;
 
         public void OnInit()
         {
@@ -70,9 +61,7 @@ namespace Pisces.Client.Network.Channel
                 // 清理旧连接
                 CleanupSocket();
             }
-
-            _serverUrl = host;
-            _serverPort = port;
+            
             _isConnecting = true;
 
             try
@@ -140,25 +129,32 @@ namespace Pisces.Client.Network.Channel
             }
         }
 
-        public void Send(byte[] data)
+        public bool Send(byte[] data)
         {
             if (data == null || data.Length == 0)
-                return;
+            {
+                SendFailedEvent?.Invoke(this, data, SendFailureReason.InvalidData);
+                return false;
+            }
 
             if (!IsConnected || _socket == null)
             {
                 GameLogger.LogWarning("[WebSocketChannel] 无法发送：未连接");
-                return;
+                SendFailedEvent?.Invoke(this, data, SendFailureReason.NotConnected);
+                return false;
             }
 
             try
             {
                 _socket.SendAsync(data);
                 SendMessageEvent?.Invoke(this);
+                return true;
             }
             catch (Exception ex)
             {
                 GameLogger.LogError($"[WebSocketChannel] 发送失败: {ex.Message}");
+                SendFailedEvent?.Invoke(this, data, SendFailureReason.ChannelClosed);
+                return false;
             }
         }
 

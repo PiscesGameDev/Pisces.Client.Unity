@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Pisces.Client.Network.Channel;
+using Pisces.Client.Network.Core;
 using Pisces.Client.Utils;
 using Pisces.Protocol;
 using UnityEngine;

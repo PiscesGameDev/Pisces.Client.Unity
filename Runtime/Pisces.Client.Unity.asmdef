@@ -1,6 +1,6 @@
 {
     "name": "Pisces.Client.Unity",
-    "rootNamespace": "Pisces.Client",
+    "rootNamespace": "",
     "references": [
         "GUID:f51ebe6a0ceec4240a699833d6309b23",
         "GUID:8b65d8710c3b04373a41cbf6b777ee65"

@@ -2,7 +2,7 @@ using System;
 using System.Buffers.Binary;
 using Pisces.Protocol;
 
-namespace Pisces.Client.Network
+namespace Pisces.Client.Network.Core
 {
     /// <summary>
     /// 数据包编解码器

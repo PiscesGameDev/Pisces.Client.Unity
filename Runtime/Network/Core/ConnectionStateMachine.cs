@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Pisces.Client.Utils;
 
-namespace Pisces.Client.Network
+namespace Pisces.Client.Network.Core
 {
     /// <summary>
     /// 连接状态机

@@ -1,7 +1,8 @@
 using System.Collections.Generic;
-using System.IO;
+using Pisces.Client.Network.Channel;
 using Pisces.Client.Settings;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -14,6 +15,7 @@ namespace Pisces.Client.Editor.Settings
     public class PiscesSettingsProvider : SettingsProvider
     {
         private const string SettingsPath = "Project/Pisces Client";
+        private const string WebSocketDefineSymbol = "ENABLE_WEBSOCKET";
         
         private SerializedObject _serializedSettings;
         private PiscesSettings _settings;
@@ -42,7 +44,7 @@ namespace Pisces.Client.Editor.Settings
         private bool _networkFoldout = true;
         private bool _heartbeatFoldout = true;
         private bool _reconnectFoldout = true;
-        private bool _bufferFoldout = false;
+        private bool _bufferFoldout;
         private bool _rateLimitFoldout = true;
         private bool _debugFoldout = true;
 
@@ -312,8 +314,49 @@ namespace Pisces.Client.Editor.Settings
             {
                 EditorGUI.indentLevel++;
 
+                // 检测协议类型变化
+                EditorGUI.BeginChangeCheck();
                 EditorGUILayout.PropertyField(_channelType, new GUIContent("传输协议",
                     "传输协议类型（TCP、UDP 或 WebSocket）"));
+                if (EditorGUI.EndChangeCheck())
+                {
+                    // 应用修改以获取最新值
+                    _serializedSettings.ApplyModifiedProperties();
+
+                    // 同步 WebSocket 宏定义
+                    SyncWebSocketDefineSymbol(_settings.ChannelType);
+
+                    // 重新加载序列化对象
+                    _serializedSettings.Update();
+                }
+
+                // 显示当前宏状态
+                var hasWebSocketDefine = HasScriptingDefineSymbol(WebSocketDefineSymbol);
+                var currentChannelType = (ChannelType)_channelType.enumValueIndex;
+
+                if (currentChannelType == ChannelType.WebSocket)
+                {
+                    if (hasWebSocketDefine)
+                    {
+                        EditorGUILayout.HelpBox($"已启用 {WebSocketDefineSymbol} 宏定义", MessageType.Info);
+                    }
+                    else
+                    {
+                        EditorGUILayout.HelpBox($"需要 {WebSocketDefineSymbol} 宏定义，点击下方按钮添加", MessageType.Warning);
+                        if (GUILayout.Button($"添加 {WebSocketDefineSymbol} 宏定义"))
+                        {
+                            AddScriptingDefineSymbol(WebSocketDefineSymbol);
+                        }
+                    }
+                }
+                else if (hasWebSocketDefine)
+                {
+                    EditorGUILayout.HelpBox($"当前未使用 WebSocket，但 {WebSocketDefineSymbol} 宏定义仍存在", MessageType.Info);
+                    if (GUILayout.Button($"移除 {WebSocketDefineSymbol} 宏定义"))
+                    {
+                        RemoveScriptingDefineSymbol(WebSocketDefineSymbol);
+                    }
+                }
 
                 EditorGUILayout.Space(5);
 
@@ -511,6 +554,91 @@ namespace Pisces.Client.Editor.Settings
         public static SettingsProvider CreatePiscesSettingsProvider()
         {
             return new PiscesSettingsProvider(SettingsPath);
+        }
+
+        #endregion
+
+        #region Scripting Define Symbol Management
+
+        /// <summary>
+        /// 获取当前构建目标组
+        /// </summary>
+        private static NamedBuildTarget GetCurrentNamedBuildTarget()
+        {
+            var buildTargetGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
+            return NamedBuildTarget.FromBuildTargetGroup(buildTargetGroup);
+        }
+
+        /// <summary>
+        /// 检查是否存在指定的宏定义
+        /// </summary>
+        private static bool HasScriptingDefineSymbol(string symbol)
+        {
+            var namedBuildTarget = GetCurrentNamedBuildTarget();
+            PlayerSettings.GetScriptingDefineSymbols(namedBuildTarget, out var defines);
+
+            foreach (var define in defines)
+            {
+                if (define == symbol)
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 添加宏定义
+        /// </summary>
+        private static void AddScriptingDefineSymbol(string symbol)
+        {
+            if (HasScriptingDefineSymbol(symbol))
+                return;
+
+            var namedBuildTarget = GetCurrentNamedBuildTarget();
+            PlayerSettings.GetScriptingDefineSymbols(namedBuildTarget, out var defines);
+
+            var newDefines = new string[defines.Length + 1];
+            defines.CopyTo(newDefines, 0);
+            newDefines[defines.Length] = symbol;
+
+            PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, newDefines);
+            Debug.Log($"[Pisces] 已添加宏定义: {symbol}");
+        }
+
+        /// <summary>
+        /// 移除宏定义
+        /// </summary>
+        private static void RemoveScriptingDefineSymbol(string symbol)
+        {
+            if (!HasScriptingDefineSymbol(symbol))
+                return;
+
+            var namedBuildTarget = GetCurrentNamedBuildTarget();
+            PlayerSettings.GetScriptingDefineSymbols(namedBuildTarget, out var defines);
+
+            var newDefines = new List<string>(defines.Length);
+            foreach (var define in defines)
+            {
+                if (define != symbol)
+                    newDefines.Add(define);
+            }
+
+            PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, newDefines.ToArray());
+            Debug.Log($"[Pisces] 已移除宏定义: {symbol}");
+        }
+
+        /// <summary>
+        /// 根据通道类型同步 WebSocket 宏定义
+        /// </summary>
+        private static void SyncWebSocketDefineSymbol(ChannelType channelType)
+        {
+            if (channelType == ChannelType.WebSocket)
+            {
+                AddScriptingDefineSymbol(WebSocketDefineSymbol);
+            }
+            else
+            {
+                RemoveScriptingDefineSymbol(WebSocketDefineSymbol);
+            }
         }
 
         #endregion
