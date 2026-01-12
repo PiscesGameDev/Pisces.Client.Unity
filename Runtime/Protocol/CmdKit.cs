@@ -7,12 +7,9 @@ namespace Pisces.Protocol
     /// </summary>
     public static class CmdKit
     {
-        // 请求映射表（cmdMerge -> 描述）
-        private static readonly Dictionary<int, string> _requestMapping = new();
-
-        // 广播映射表（cmdMerge -> 描述）
-        private static readonly Dictionary<int, string> _broadcastMapping = new();
-
+        // 路由映射表（cmdMerge -> 描述）
+        private static readonly Dictionary<int, string> _cmdMapping = new();
+        
         /// <summary>
         /// 获取主命令（高16位）
         /// </summary>
@@ -27,58 +24,52 @@ namespace Pisces.Protocol
         /// 合并命令
         /// </summary>
         public static int Merge(int cmd, int subCmd) => (cmd << 16) | subCmd;
-
+        
         /// <summary>
-        /// 格式化为字符串 [cmd-subCmd]
+        /// 格式化器委托
         /// </summary>
-        public static string ToString(int cmdMerge) =>
-            $"[{GetCmd(cmdMerge)}-{GetSubCmd(cmdMerge)}]";
+        public delegate string CmdFormatter(int cmd, int subCmd, int mergedCmd);
+        public static CmdFormatter CurrentFormatter { get; set; } = DefaultFormatter;
 
+        // 默认格式化器（结合路由映射）
+        private static string DefaultFormatter(int cmd, int subCmd, int mergedCmd)
+        {
+            var merged = Merge(cmd, subCmd);
+            if (_cmdMapping.TryGetValue(merged, out var title))
+                return $"[{title}] cmd:{cmd} sub:{subCmd}";
+            
+            return $"[{cmd}-{subCmd}]";
+        }
+        
+        // 字符串表示
+        public static string ToString(int mergedCmd)
+        {
+            var cmd = GetCmd(mergedCmd);
+            var subCmd = GetSubCmd(mergedCmd);
+            return CurrentFormatter(cmd, subCmd, mergedCmd);
+        }
+        
+        public static string ToString(int cmd, int subCmd)
+        {
+            return CurrentFormatter(cmd, subCmd, Merge(cmd, subCmd));
+        }
+        
         /// <summary>
-        /// 注册请求映射（由生成代码调用）
+        /// 注册映射（由生成代码调用）
         /// </summary>
         /// <returns>返回 cmdMerge 本身，便于链式调用</returns>
-        public static int MappingRequest(int cmdMerge, string description)
+        public static int Mapping(int cmdMerge, string description)
         {
-            _requestMapping[cmdMerge] = description;
+            _cmdMapping[cmdMerge] = description;
             return cmdMerge;
         }
-
-        /// <summary>
-        /// 注册广播映射（由生成代码调用）
-        /// </summary>
-        /// <returns>返回 cmdMerge 本身，便于链式调用</returns>
-        public static int MappingBroadcast(int cmdMerge, string description)
-        {
-            _broadcastMapping[cmdMerge] = description;
-            return cmdMerge;
-        }
-
-        /// <summary>
-        /// 获取请求描述
-        /// </summary>
-        public static string GetRequestTitle(int cmdMerge) =>
-            _requestMapping.TryGetValue(cmdMerge, out var title)
-                ? title
-                : $"Request{ToString(cmdMerge)}";
-
-        /// <summary>
-        /// 获取广播描述
-        /// </summary>
-        public static string GetBroadcastTitle(int cmdMerge)
-        {
-            return _broadcastMapping.TryGetValue(cmdMerge, out var title)
-                ? title
-                : $"Broadcast{ToString(cmdMerge)}";
-        }
-
+        
         /// <summary>
         /// 清除所有映射（用于热重载）
         /// </summary>
         public static void ClearMappings()
         {
-            _requestMapping.Clear();
-            _broadcastMapping.Clear();
+            _cmdMapping.Clear();
         }
     }
 }
