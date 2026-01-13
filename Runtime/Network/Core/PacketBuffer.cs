@@ -1,5 +1,4 @@
 using System;
-using System.Buffers.Binary;
 using System.Collections.Generic;
 using Pisces.Protocol;
 
@@ -80,16 +79,8 @@ namespace Pisces.Client.Network.Core
 
             while (readPos + PacketCodec.HeaderSize <= _writePos)
             {
-                // 读取长度头（大端序）
-                var bodyLength = BinaryPrimitives.ReadInt32BigEndian(
-                    _buffer.AsSpan(readPos, PacketCodec.HeaderSize)
-                );
-
-                // 验证长度
-                if (bodyLength is < 0 or > PacketCodec.MaxBodySize)
-                {
-                    throw new InvalidOperationException($"数据包长度无效: {bodyLength}");
-                }
+                // 读取长度头
+                var bodyLength = PacketCodec.ReadBodyLength(_buffer, readPos);
 
                 // 检查数据是否完整
                 var packetLength = PacketCodec.HeaderSize + bodyLength;
@@ -99,7 +90,7 @@ namespace Pisces.Client.Network.Core
                 }
 
                 // 反序列化消息
-                var message = ProtoSerializer.Deserialize(_buffer, readPos + PacketCodec.HeaderSize, bodyLength,ExternalMessage.Parser);
+                var message = PacketCodec.DecodeBody(_buffer, readPos + PacketCodec.HeaderSize, bodyLength);
 
                 if (message != null)
                 {

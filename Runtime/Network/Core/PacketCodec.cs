@@ -25,8 +25,7 @@ namespace Pisces.Client.Network.Core
         /// </summary>
         public static byte[] Encode(ExternalMessage message)
         {
-            if (message == null)
-                throw new ArgumentNullException(nameof(message));
+            if (message == null) throw new ArgumentNullException(nameof(message));
 
             var body = ProtoSerializer.Serialize(message);
             var packet = new byte[HeaderSize + body.Length];
@@ -56,7 +55,28 @@ namespace Pisces.Client.Network.Core
             if (packet.Length < HeaderSize + bodyLength)
                 throw new InvalidOperationException("Incomplete packet");
 
-            return ProtoSerializer.Deserialize<ExternalMessage>(packet, HeaderSize, bodyLength);
+            return DecodeBody(packet, HeaderSize, bodyLength);
+        }
+
+        /// <summary>
+        /// 从缓冲区解码消息体（不包含长度头）
+        /// </summary>
+        /// <param name="buffer">数据缓冲区</param>
+        /// <param name="offset">消息体起始偏移</param>
+        /// <param name="bodyLength">消息体长度</param>
+        /// <returns>解码后的消息</returns>
+        public static ExternalMessage DecodeBody(byte[] buffer, int offset, int bodyLength)
+        {
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer));
+
+            if (bodyLength is < 0 or > MaxBodySize)
+                throw new InvalidOperationException($"Invalid body length: {bodyLength}");
+
+            if (offset < 0 || offset + bodyLength > buffer.Length)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+
+            return ProtoSerializer.Deserialize(buffer, offset, bodyLength, ExternalMessage.Parser);
         }
 
         /// <summary>
