@@ -16,7 +16,7 @@ namespace Pisces.Client.Network.Channel
         /// <summary>
         /// 默认接收缓冲区大小 (64KB)
         /// </summary>
-        protected const int DefaultReceiveBufferSize = 65536;
+        private const int DefaultReceiveBufferSize = 65536;
 
         /// <summary>
         /// 线程休眠时间（毫秒）
@@ -26,20 +26,11 @@ namespace Pisces.Client.Network.Channel
         private volatile bool _isEnableThread;
         private volatile bool _isConnected;
         private volatile bool _isDisposed;
-        
+
         /// <summary>
         /// 接收缓冲区（复用以减少GC）
         /// </summary>
         protected readonly byte[] ReceiveBuffer = new byte[DefaultReceiveBufferSize];
-
-        /// <summary>
-        /// 设置连接状态（供子类使用）
-        /// </summary>
-        protected bool IsConnectedInternal
-        {
-            get => _isConnected;
-            set => _isConnected = value;
-        }
 
         private Thread _sendThread;
         private Thread _receiveThread;
@@ -297,6 +288,13 @@ namespace Pisces.Client.Network.Channel
             {
                 GameLogger.LogWarning($"[{ChannelType}Channel] 无法发送：数据无效");
                 MainThreadDispatcher.InvokeOnMainThread(() => SendFailedEvent?.Invoke(this, data, SendFailureReason.InvalidData));
+                return false;
+            }
+
+            if (data.Length > DefaultReceiveBufferSize)
+            {
+                GameLogger.LogError($"[{ChannelType}Channel] 数据过大: {data.Length} 字节 (最大 {DefaultReceiveBufferSize})");
+                MainThreadDispatcher.InvokeOnMainThread(() => SendFailedEvent?.Invoke(this, data, SendFailureReason.DataTooLarge));
                 return false;
             }
 

@@ -25,7 +25,12 @@ namespace Pisces.Client.Network.Channel
         /// <summary>
         /// 通道已关闭
         /// </summary>
-        ChannelClosed
+        ChannelClosed,
+
+        /// <summary>
+        /// 数据过大
+        /// </summary>
+        DataTooLarge
     }
 
     /// <summary>

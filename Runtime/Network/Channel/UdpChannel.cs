@@ -74,23 +74,5 @@ namespace Pisces.Client.Network.Channel
             }
         }
 
-        /// <summary>
-        /// 发送数据
-        /// </summary>
-        public override bool Send(byte[] data)
-        {
-            if (data == null || data.Length == 0)
-                return false;
-
-            if (data.Length > DefaultReceiveBufferSize)
-            {
-                GameLogger.LogError(
-                    $"[UdpChannel] Data too large: {data.Length} bytes (max {DefaultReceiveBufferSize})"
-                );
-                return false;
-            }
-
-            return base.Send(data);
-        }
     }
 }
