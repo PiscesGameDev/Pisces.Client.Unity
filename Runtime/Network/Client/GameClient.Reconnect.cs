@@ -14,6 +14,12 @@ namespace Pisces.Client.Network
     /// </summary>
     public partial class GameClient
     {
+        // 重连相关
+        private CancellationTokenSource _reconnectCts;
+        private readonly object _reconnectLock = new();
+        private volatile bool _isReconnecting;
+        private int _reconnectCount;
+
         /// <summary>
         /// 判断断线原因是否允许自动重连
         /// </summary>
@@ -191,7 +197,7 @@ namespace Pisces.Client.Network
                 StartHeartbeat();
 
                 // 启动待处理请求清理
-                StartPendingRequestsCleanup();
+                StartPendingRequests();
 
                 GameLogger.Log($"[GameClient] 已连接到 {_options.Host}:{_options.Port}");
             }
@@ -205,6 +211,15 @@ namespace Pisces.Client.Network
                 GameLogger.LogError($"[GameClient] 连接失败: {ex.Message}");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// 释放重连相关资源
+        /// </summary>
+        private void DisposeReconnect()
+        {
+            // StopReconnect 已处理 CTS 的释放
+            // 此方法保留用于释放额外资源
         }
     }
 }

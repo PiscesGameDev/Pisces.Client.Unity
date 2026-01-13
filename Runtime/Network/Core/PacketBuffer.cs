@@ -97,11 +97,7 @@ namespace Pisces.Client.Network.Core
                 }
 
                 // 反序列化消息
-                var message = ProtoSerializer.Deserialize<ExternalMessage>(
-                    _buffer,
-                    readPos + PacketCodec.HeaderSize,
-                    bodyLength
-                );
+                var message = ProtoSerializer.Deserialize(_buffer, readPos + PacketCodec.HeaderSize, bodyLength,ExternalMessage.Parser);
 
                 if (message != null)
                 {

@@ -15,11 +15,49 @@ namespace Pisces.Client.Network
     /// </summary>
     public partial class GameClient
     {
+        // 消息缓冲区
+        private PacketBuffer _receiveBuffer;
+
+        // 限流器
+        private RateLimiter _rateLimiter;
+
+        /// <summary>
+        /// 收到消息事件
+        /// </summary>
+        public event Action<ExternalMessage> OnMessageReceived;
+
         /// <summary>
         /// 消息发送失败事件
         /// 参数：CmdMerge, MsgId, 失败原因
         /// </summary>
         public event Action<int, int, SendResult> OnSendFailed;
+
+        /// <summary>
+        /// 初始化消息模块
+        /// </summary>
+        private void InitMessaging()
+        {
+            _receiveBuffer = new PacketBuffer(
+                _options.PacketBufferInitialSize,
+                _options.PacketBufferShrinkThreshold
+            );
+
+            // 初始化限流器
+            if (_options.EnableRateLimit && _options.MaxSendRate > 0)
+            {
+                _rateLimiter = new RateLimiter(_options.MaxBurstSize, _options.MaxSendRate);
+                GameLogger.Log($"[GameClient] 限流器已启用: 速率={_options.MaxSendRate}/s, 突发={_options.MaxBurstSize}");
+            }
+        }
+
+        /// <summary>
+        /// 释放消息模块资源
+        /// </summary>
+        private void DisposeMessaging()
+        {
+            _receiveBuffer?.Clear();
+            _receiveBuffer = null;
+        }
 
         public async UniTask SendAsync(
             ExternalMessage message,

@@ -12,6 +12,11 @@ namespace Pisces.Client.Network
     /// </summary>
     public partial class GameClient
     {
+        // 心跳相关
+        private CancellationTokenSource _heartbeatCts;
+        private int _heartbeatTimeoutCount;
+        
+        
         private void StartHeartbeat()
         {
             StopHeartbeat();
@@ -74,6 +79,15 @@ namespace Pisces.Client.Network
                     GameLogger.LogError($"[GameClient] 心跳错误: {ex.Message}");
                 }
             }
+        }
+
+        /// <summary>
+        /// 释放心跳相关资源
+        /// </summary>
+        private void DisposeHeartbeat()
+        {
+            // StopHeartbeat 已处理 CTS 的释放
+            // 此方法保留用于释放额外资源
         }
     }
 }

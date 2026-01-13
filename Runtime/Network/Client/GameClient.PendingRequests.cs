@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -34,6 +35,12 @@ namespace Pisces.Client.Network
     public partial class GameClient
     {
         /// <summary>
+        /// 等待响应的请求队列
+        /// Key: MsgId, Value: PendingRequestInfo（包含 TCS 和元数据）
+        /// </summary>
+        private readonly ConcurrentDictionary<int, PendingRequestInfo> _pendingRequests = new();
+
+        /// <summary>
         /// 清理循环间隔（毫秒）
         /// </summary>
         private const int CleanupIntervalMs = 5000;
@@ -49,9 +56,9 @@ namespace Pisces.Client.Network
         /// <summary>
         /// 启动待处理请求清理任务
         /// </summary>
-        private void StartPendingRequestsCleanup()
+        private void StartPendingRequests()
         {
-            StopPendingRequestsCleanup();
+            StopPendingRequests();
 
             _cleanupCts = new CancellationTokenSource();
             PendingRequestsCleanupLoop(_cleanupCts.Token).Forget();
@@ -62,7 +69,7 @@ namespace Pisces.Client.Network
         /// <summary>
         /// 停止待处理请求清理任务
         /// </summary>
-        private void StopPendingRequestsCleanup()
+        private void StopPendingRequests()
         {
             _cleanupCts?.Cancel();
             _cleanupCts?.Dispose();
@@ -158,5 +165,34 @@ namespace Pisces.Client.Network
         /// 获取当前待处理请求数量
         /// </summary>
         public int PendingRequestCount => _pendingRequests.Count;
+
+        /// <summary>
+        /// 清理所有待处理请求
+        /// </summary>
+        /// <param name="exception">异常原因</param>
+        private void ClearPendingRequests(Exception exception)
+        {
+            foreach (var kvp in _pendingRequests)
+            {
+                try
+                {
+                    kvp.Value.Tcs?.TrySetException(exception);
+                }
+                catch (Exception ex)
+                {
+                    GameLogger.LogWarning($"[GameClient] 清理待处理请求时异常: {ex.Message}");
+                }
+            }
+            _pendingRequests.Clear();
+        }
+
+        /// <summary>
+        /// 释放待处理请求相关资源
+        /// </summary>
+        private void DisposePendingRequests()
+        {
+            // StopPendingRequests 已处理 CTS 的释放
+            // 此方法保留用于释放额外资源
+        }
     }
 }
