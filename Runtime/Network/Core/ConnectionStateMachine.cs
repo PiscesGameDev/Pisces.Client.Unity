@@ -128,7 +128,7 @@ namespace Pisces.Client.Network.Core
                 var previousState = _state;
                 _state = newState;
 
-                GameLogger.Log($"[StateMachine] 状态转换: {previousState} -> {newState}");
+                // GameLogger.Log($"[StateMachine] 状态转换: {previousState} -> {newState}");
 
                 // 触发事件（在锁外触发以避免死锁）
                 // 注意：这里我们在锁内触发，因为事件处理程序应该是轻量级的

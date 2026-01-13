@@ -29,8 +29,6 @@ namespace Pisces.Client.Unity
             // 编辑器模式下额外处理 Play Mode 退出
             UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
 #endif
-
-            GameLogger.Log("[PiscesLifecycleManager] 已初始化");
         }
 
         private static void OnApplicationQuitting()
@@ -63,7 +61,6 @@ namespace Pisces.Client.Unity
                 if (!piscesSdk.IsInitialized) return;
                 piscesSdk.Close();
                 piscesSdk.Dispose();
-                GameLogger.Log("[PiscesLifecycleManager] SDK 已清理");
             }
             catch (System.Exception ex)
             {

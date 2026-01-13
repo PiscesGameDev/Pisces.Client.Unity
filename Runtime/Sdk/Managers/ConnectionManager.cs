@@ -62,8 +62,6 @@ namespace Pisces.Client.Sdk
             // 订阅客户端事件
             _client.OnStateChanged += HandleStateChanged;
             _client.OnError += HandleError;
-
-            GameLogger.Log("[ConnectionManager] 初始化完成");
         }
 
         /// <summary>
