@@ -51,7 +51,11 @@ https://github.com/PiscesGameDev/Pisces.Client.Unity.git
 ### 初始化与连接
 
 ```csharp
-// 初始化
+// 方式 1: 使用 Project Settings 配置（推荐）
+// 在 Edit → Project Settings → Pisces Client 中配置服务器和参数
+PiscesSdk.Instance.Initialize();
+
+// 方式 2: 代码配置
 PiscesSdk.Instance.Initialize(new GameClientOptions
 {
     Host = "127.0.0.1",
