@@ -6,14 +6,9 @@ using Pisces.Client.Sdk;
 using Pisces.Client.Utils;
 using UnityEditor;
 using UnityEngine;
-using Vector2 = UnityEngine.Vector2;
 
 namespace Pisces.Client.Editor
 {
-    /// <summary>
-    /// Pisces 网络监控窗口
-    /// 运行时显示网络状态、统计信息和消息日志
-    /// </summary>
     public class PiscesNetworkMonitor : EditorWindow
     {
         // 窗口状态
@@ -21,28 +16,39 @@ namespace Pisces.Client.Editor
         private Vector2 _logScrollPosition;
         private string _logFilter = "";
         private bool _autoScroll = true;
-        private int _logTypeFilter; // 0=全部, 1=发送, 2=接收
+        private int _logTypeFilter;
 
         // 刷新控制
         private double _lastRepaintTime;
-        private const double RepaintInterval = 0.1; // 100ms 刷新一次
+        private const double RepaintInterval = 0.1;
 
-        // 缓存的日志
+        // 缓存
         private List<NetworkMessageLog> _cachedLogs = new();
         private int _lastLogCount;
 
-        // 样式
+        // 样式系统
         private GUIStyle _statusConnectedStyle;
         private GUIStyle _statusDisconnectedStyle;
         private GUIStyle _statusReconnectingStyle;
         private GUIStyle _boxStyle;
-        private GUIStyle _logEntryStyle;
-        private GUIStyle _logSendStyle;
-        private GUIStyle _logRecvStyle;
         private GUIStyle _headerStyle;
+
+        // Log 专用对齐样式
+        private GUIStyle _logTimeStyle;
+        private GUIStyle _logIdStyle;
+        private GUIStyle _logMainStyle;
+        private GUIStyle _logInfoStyle;
+        private GUIStyle _logErrorStyle;
+
         private bool _stylesInitialized;
 
-        // Foldout 状态
+        // 配色方案
+        private static readonly Color ColorSendBg = new Color(0.2f, 0.45f, 0.7f, 0.15f); // 柔和蓝
+        private static readonly Color ColorRecvBg = new Color(0.25f, 0.55f, 0.4f, 0.15f); // 柔和绿
+        private static readonly Color ColorErrBg  = new Color(0.7f, 0.25f, 0.25f, 0.25f); // 警告红
+        private static readonly Color ZebraOverlay = new Color(1f, 1f, 1f, 0.05f);        // 斑马纹亮度叠加
+
+        // Foldout
         private bool _connectionFoldout = true;
         private bool _statisticsFoldout = true;
         private bool _heartbeatFoldout = true;
@@ -54,26 +60,16 @@ namespace Pisces.Client.Editor
         {
             var window = GetWindow<PiscesNetworkMonitor>();
             window.titleContent = new GUIContent("网络监控", EditorGUIUtility.IconContent("d_Profiler.NetworkMessages").image);
-            window.minSize = new Vector2(400, 500);
+            window.minSize = new Vector2(550, 500);
             window.Show();
         }
 
-        private void OnEnable()
-        {
-            EditorApplication.update += OnEditorUpdate;
-        }
-
-        private void OnDisable()
-        {
-            EditorApplication.update -= OnEditorUpdate;
-        }
+        private void OnEnable() => EditorApplication.update += OnEditorUpdate;
+        private void OnDisable() => EditorApplication.update -= OnEditorUpdate;
 
         private void OnEditorUpdate()
         {
-            // 仅在运行时刷新
             if (!Application.isPlaying) return;
-
-            // 限制刷新频率
             if (EditorApplication.timeSinceStartup - _lastRepaintTime >= RepaintInterval)
             {
                 _lastRepaintTime = EditorApplication.timeSinceStartup;
@@ -85,50 +81,39 @@ namespace Pisces.Client.Editor
         {
             if (_stylesInitialized) return;
 
-            _statusConnectedStyle = new GUIStyle(EditorStyles.boldLabel)
-            {
-                normal = { textColor = new Color(0.2f, 0.8f, 0.2f) },
-                fontSize = 14
+            const float rowHeight = 22f;
+
+            // 基础样式
+            _statusConnectedStyle = new GUIStyle(EditorStyles.boldLabel) { normal = { textColor = new Color(0.3f, 0.8f, 0.3f) }, fontSize = 14 };
+            _statusDisconnectedStyle = new GUIStyle(EditorStyles.boldLabel) { normal = { textColor = new Color(0.8f, 0.4f, 0.4f) }, fontSize = 14 };
+            _statusReconnectingStyle = new GUIStyle(EditorStyles.boldLabel) { normal = { textColor = new Color(0.9f, 0.7f, 0.3f) }, fontSize = 14 };
+            _boxStyle = new GUIStyle("helpbox") { padding = new RectOffset(10, 10, 8, 8), margin = new RectOffset(5, 5, 5, 5) };
+            _headerStyle = new GUIStyle(EditorStyles.boldLabel) { fontSize = 12 };
+
+            // 日志列样式 (核心：居中对齐 + 固定高度)
+            _logTimeStyle = new GUIStyle(EditorStyles.miniLabel) {
+                alignment = TextAnchor.MiddleLeft, fixedHeight = rowHeight,
+                normal = { textColor = new Color(0.5f, 0.5f, 0.5f) }
             };
 
-            _statusDisconnectedStyle = new GUIStyle(EditorStyles.boldLabel)
-            {
-                normal = { textColor = new Color(0.8f, 0.3f, 0.3f) },
-                fontSize = 14
+            _logIdStyle = new GUIStyle(EditorStyles.miniLabel) {
+                alignment = TextAnchor.MiddleLeft, fixedHeight = rowHeight,
+                normal = { textColor = new Color(0.45f, 0.75f, 0.95f, 0.9f) }
             };
 
-            _statusReconnectingStyle = new GUIStyle(EditorStyles.boldLabel)
-            {
-                normal = { textColor = new Color(0.9f, 0.7f, 0.2f) },
-                fontSize = 14
+            _logMainStyle = new GUIStyle(EditorStyles.label) {
+                richText = true, alignment = TextAnchor.MiddleLeft, fixedHeight = rowHeight, fontSize = 11
             };
 
-            _boxStyle = new GUIStyle("helpbox")
-            {
-                padding = new RectOffset(10, 10, 8, 8),
-                margin = new RectOffset(5, 5, 5, 5)
+            _logInfoStyle = new GUIStyle(EditorStyles.miniLabel) {
+                alignment = TextAnchor.MiddleRight, fixedHeight = rowHeight,
+                normal = { textColor = new Color(0.6f, 0.6f, 0.6f) }
             };
 
-            _headerStyle = new GUIStyle(EditorStyles.boldLabel)
-            {
-                fontSize = 12
-            };
-
-            _logEntryStyle = new GUIStyle(EditorStyles.label)
-            {
-                fontSize = 11,
-                richText = true,
-                wordWrap = false
-            };
-
-            _logSendStyle = new GUIStyle(_logEntryStyle)
-            {
-                normal = { textColor = new Color(0.6f, 0.8f, 1f) }
-            };
-
-            _logRecvStyle = new GUIStyle(_logEntryStyle)
-            {
-                normal = { textColor = new Color(0.6f, 1f, 0.6f) }
+            _logErrorStyle = new GUIStyle(EditorStyles.miniLabel) {
+                richText = true, alignment = TextAnchor.MiddleLeft,
+                normal = { textColor = new Color(1f, 0.4f, 0.4f) },
+                padding = new RectOffset(20, 0, 0, 0) // 缩进显示
             };
 
             _stylesInitialized = true;
@@ -138,122 +123,158 @@ namespace Pisces.Client.Editor
         {
             InitializeStyles();
 
-            // 非运行时显示提示
-            if (!Application.isPlaying)
-            {
-                DrawNotPlayingUI();
-                return;
-            }
-
-            // 检查 SDK 是否初始化
-            if (!PiscesSdk.Instance.IsInitialized)
-            {
-                DrawNotInitializedUI();
-                return;
-            }
+            if (!Application.isPlaying) { DrawNotPlayingUI(); return; }
+            if (!PiscesSdk.Instance.IsInitialized) { DrawNotInitializedUI(); return; }
 
             var client = PiscesSdk.Instance.Client;
-            if (client == null)
-            {
-                EditorGUILayout.HelpBox("客户端实例为空", MessageType.Warning);
-                return;
-            }
-
             var stats = client.Statistics;
-            var options = client.Options;
-
-            // 更新速率统计
             stats.UpdateRates();
 
-            // 工具栏
             DrawToolbar(client, stats);
-
             EditorGUILayout.Space(5);
 
-            // 主内容区域
             using (var scrollView = new EditorGUILayout.ScrollViewScope(_mainScrollPosition))
             {
                 _mainScrollPosition = scrollView.scrollPosition;
-
-                DrawConnectionSection(client, options);
+                DrawConnectionSection(client, client.Options);
                 DrawStatisticsSection(stats);
-                DrawHeartbeatSection(stats, options);
+                DrawHeartbeatSection(stats, client.Options);
                 DrawTimeSyncSection();
                 DrawLogSection(stats);
             }
         }
 
-        private void DrawNotPlayingUI()
+        private void DrawLogSection(NetworkStatistics stats)
         {
-            EditorGUILayout.Space(50);
-            using (new EditorGUILayout.HorizontalScope())
+            _logFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(_logFoldout, $"消息日志 ({stats.LogCount})");
+            if (_logFoldout)
             {
-                GUILayout.FlexibleSpace();
-                using (new EditorGUILayout.VerticalScope())
+                using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
                 {
-                    GUILayout.Label("网络监控", _headerStyle ?? EditorStyles.boldLabel);
-                    EditorGUILayout.Space(10);
-                    EditorGUILayout.HelpBox("请在运行模式下使用此窗口", MessageType.Info);
-
-                    EditorGUILayout.Space(10);
-                    if (GUILayout.Button("打开设置", GUILayout.Width(100)))
+                    GUILayout.Label("过滤:", GUILayout.Width(35));
+                    _logTypeFilter = EditorGUILayout.Popup(_logTypeFilter, new[] { "全部", "发送 ↑", "接收 ↓" }, GUILayout.Width(70));
+                    _logFilter = EditorGUILayout.TextField(_logFilter, EditorStyles.toolbarSearchField);
+                    _autoScroll = GUILayout.Toggle(_autoScroll, "自动滚动", GUILayout.Width(70));
+                    if (GUILayout.Button("清空", EditorStyles.toolbarButton, GUILayout.Width(50)))
                     {
-                        SettingsService.OpenProjectSettings("Project/Pisces Client");
+                        stats.ClearLogs();
+                        _cachedLogs.Clear();
                     }
                 }
-                GUILayout.FlexibleSpace();
+
+                if (stats.LogCount != _lastLogCount)
+                {
+                    _cachedLogs = stats.GetLogs(100);
+                    _lastLogCount = stats.LogCount;
+                }
+
+                var logAreaHeight = Mathf.Max(200, position.height - 480);
+                using (var scrollView = new EditorGUILayout.ScrollViewScope(_logScrollPosition, "box", GUILayout.Height(logAreaHeight)))
+                {
+                    _logScrollPosition = scrollView.scrollPosition;
+
+                    for (int i = 0; i < _cachedLogs.Count; i++)
+                    {
+                        var log = _cachedLogs[i];
+                        if (_logTypeFilter == 1 && !log.IsOutgoing) continue;
+                        if (_logTypeFilter == 2 && log.IsOutgoing) continue;
+                        if (!string.IsNullOrEmpty(_logFilter) && !log.CmdDisplay.Contains(_logFilter)) continue;
+
+                        DrawLogEntry(log, i);
+                    }
+
+                    if (_autoScroll && Event.current.type == EventType.Repaint)
+                    {
+                        _logScrollPosition.y = float.MaxValue;
+                    }
+                }
+            }
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+
+        private void DrawLogEntry(NetworkMessageLog log, int index)
+        {
+            // 1. 动态计算背景色
+            Color bgColor = log.IsOutgoing ? ColorSendBg : ColorRecvBg;
+            if (!log.IsSuccess) bgColor = ColorErrBg;
+            if (index % 2 == 0) bgColor += ZebraOverlay; // 斑马纹处理
+
+            // 2. 绘制行背景
+            Rect rect = EditorGUILayout.BeginHorizontal(GUILayout.Height(22));
+            var prevColor = GUI.color;
+            GUI.color = bgColor;
+            GUI.DrawTexture(rect, EditorGUIUtility.whiteTexture);
+            GUI.color = prevColor;
+
+            // 3. 绘制列数据 (确保样式中 alignment 已经设为 MiddleLeft/Right)
+
+            // [时间] 85px
+            GUILayout.Label(log.Timestamp.ToString("HH:mm:ss.fff"), _logTimeStyle, GUILayout.Width(85));
+
+            // [方向] 18px
+            string arrow = log.IsOutgoing ? "<color=#569cd6>↑</color>" : "<color=#4ec9b0>↓</color>";
+            GUILayout.Label(arrow, _logMainStyle, GUILayout.Width(18));
+
+            // [MsgId] 45px
+            string idStr = log.MsgId != 0 ? $"#{log.MsgId:D3}" : " ---";
+            GUILayout.Label(idStr, _logIdStyle, GUILayout.Width(45));
+
+            // [协议名] 自动扩展
+            string cmdColor = log.IsSuccess ? "#dcdcdc" : "#f44747";
+            string cmdStr = $"<color={cmdColor}>{log.CmdDisplay}</color>";
+            if (log.IsBroadcast) cmdStr += " <color=#4fc1ff>[广播]</color>";
+            GUILayout.Label(cmdStr, _logMainStyle, GUILayout.ExpandWidth(true));
+
+            // [大小] 50px
+            GUILayout.Label($"{log.DataSize} B", _logInfoStyle, GUILayout.Width(50));
+
+            // [耗时] 65px
+            if (!log.IsOutgoing && log.ElapsedMs.HasValue)
+            {
+                float elapsed = log.ElapsedMs.Value;
+                string color = elapsed < 100 ? "#6a9955" : elapsed < 500 ? "#d7ba7d" : "#f44747";
+                GUILayout.Label($"<color={color}>{elapsed:F0}ms</color>", _logMainStyle, GUILayout.Width(65));
+            }
+            else
+            {
+                GUILayout.Space(69); // 占位
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            // 4. 错误详情行
+            if (!log.IsSuccess)
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Space(153); // 对齐协议名起始位置 (85+18+45+5间距)
+                    string errorMsg = !string.IsNullOrEmpty(log.ValidMsg) ? log.ValidMsg : $"Status: {log.ResponseStatus}";
+                    GUILayout.Label($"└─ <color=#f44747>[ERR] {errorMsg}</color>", _logErrorStyle);
+                }
             }
         }
 
-        private void DrawNotInitializedUI()
-        {
-            EditorGUILayout.Space(50);
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                GUILayout.FlexibleSpace();
-                using (new EditorGUILayout.VerticalScope())
-                {
-                    EditorGUILayout.HelpBox("Pisces SDK 未初始化\n\n请在代码中调用:\nPiscesSdk.Instance.Initialize();", UnityEditor.MessageType.Warning);
-                }
-                GUILayout.FlexibleSpace();
-            }
-        }
+        // --- 其他 UI 辅助方法 ---
 
         private void DrawToolbar(GameClient client, NetworkStatistics stats)
         {
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
-                // 连接状态指示
                 var state = client.State;
-                var stateText = GetStateText(state);
-                var stateStyle = GetStateStyle(state);
-                GUILayout.Label($"● {stateText}", stateStyle, GUILayout.Width(100));
-
+                GUILayout.Label($"● {GetStateText(state)}", GetStateStyle(state), GUILayout.Width(100));
                 GUILayout.FlexibleSpace();
-
-                // 操作按钮
                 using (new EditorGUI.DisabledGroupScope(state == ConnectionState.Connecting || state == ConnectionState.Reconnecting))
                 {
                     if (client.IsConnected)
                     {
-                        if (GUILayout.Button("断开", EditorStyles.toolbarButton, GUILayout.Width(60)))
-                        {
-                            client.Disconnect();
-                        }
+                        if (GUILayout.Button("断开", EditorStyles.toolbarButton, GUILayout.Width(60))) client.Disconnect();
                     }
                     else if (state == ConnectionState.Disconnected)
                     {
-                        if (GUILayout.Button("连接", EditorStyles.toolbarButton, GUILayout.Width(60)))
-                        {
-                            client.Connect();
-                        }
+                        if (GUILayout.Button("连接", EditorStyles.toolbarButton, GUILayout.Width(60))) client.Connect();
                     }
                 }
-
-                if (GUILayout.Button("重置统计", EditorStyles.toolbarButton, GUILayout.Width(70)))
-                {
-                    stats.Reset();
-                }
+                if (GUILayout.Button("重置统计", EditorStyles.toolbarButton, GUILayout.Width(70))) stats.Reset();
             }
         }
 
@@ -264,49 +285,11 @@ namespace Pisces.Client.Editor
             {
                 using (new EditorGUILayout.VerticalScope(_boxStyle))
                 {
-                    var state = client.State;
-                    var stateStyle = GetStateStyle(state);
-
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        GUILayout.Label("状态:", GUILayout.Width(60));
-                        GUILayout.Label($"● {GetStateText(state)}", stateStyle);
-                    }
-
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        GUILayout.Label("服务器:", GUILayout.Width(60));
-                        GUILayout.Label($"{options.Host}:{options.Port}");
-                    }
-
-                    // 当前环境
-                    var settings = PiscesSettings.Instance;
-                    if (settings != null)
-                    {
-                        using (new EditorGUILayout.HorizontalScope())
-                        {
-                            GUILayout.Label("环境:", GUILayout.Width(60));
-                            GUILayout.Label(settings.ActiveEnvironment.Name);
-                        }
-                    }
-
-                    // 连接时长
-                    var stats = client.Statistics;
-                    if (stats.ConnectedTime.HasValue)
-                    {
-                        using (new EditorGUILayout.HorizontalScope())
-                        {
-                            GUILayout.Label("连接时长:", GUILayout.Width(60));
-                            GUILayout.Label(NetworkStatistics.FormatTimeSpan(stats.ConnectionDuration));
-                        }
-                    }
-
-                    // 协议类型
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        GUILayout.Label("协议:", GUILayout.Width(60));
-                        GUILayout.Label(options.ChannelType.ToString());
-                    }
+                    DrawLabelValue("状态:", GetStateText(client.State), GetStateStyle(client.State));
+                    DrawLabelValue("服务器:", $"{options.Host}:{options.Port}");
+                    if (PiscesSettings.Instance != null) DrawLabelValue("环境:", PiscesSettings.Instance.ActiveEnvironment.Name);
+                    if (client.Statistics.ConnectedTime.HasValue) DrawLabelValue("连接时长:", NetworkStatistics.FormatTimeSpan(client.Statistics.ConnectionDuration));
+                    DrawLabelValue("协议:", options.ChannelType.ToString());
                 }
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
@@ -319,41 +302,12 @@ namespace Pisces.Client.Editor
             {
                 using (new EditorGUILayout.VerticalScope(_boxStyle))
                 {
-                    // RTT
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        GUILayout.Label("RTT:", GUILayout.Width(80));
-                        GUILayout.Label($"{TimeUtils.RttMs:F0} ms");
-                    }
-
-                    EditorGUILayout.Space(5);
-
-                    // 发送统计
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        GUILayout.Label("↑ 发送:", GUILayout.Width(80));
-                        GUILayout.Label($"{stats.TotalSendCount:N0} 条  ({NetworkStatistics.FormatBytes(stats.TotalSendBytes)})");
-                        GUILayout.FlexibleSpace();
-                        GUILayout.Label($"{NetworkStatistics.FormatBytesPerSec(stats.SendBytesPerSec)}", GUILayout.Width(100));
-                    }
-
-                    // 接收统计
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        GUILayout.Label("↓ 接收:", GUILayout.Width(80));
-                        GUILayout.Label($"{stats.TotalRecvCount:N0} 条  ({NetworkStatistics.FormatBytes(stats.TotalRecvBytes)})");
-                        GUILayout.FlexibleSpace();
-                        GUILayout.Label($"{NetworkStatistics.FormatBytesPerSec(stats.RecvBytesPerSec)}", GUILayout.Width(100));
-                    }
-
-                    EditorGUILayout.Space(5);
-
-                    // 消息速率
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        GUILayout.Label("消息速率:", GUILayout.Width(80));
-                        GUILayout.Label($"↑ {stats.SendCountPerSec:F1}/s   ↓ {stats.RecvCountPerSec:F1}/s");
-                    }
+                    DrawLabelValue("RTT:", $"{TimeUtils.RttMs:F0} ms");
+                    EditorGUILayout.Space(2);
+                    DrawLabelValue("↑ 发送:", $"{stats.TotalSendCount:N0} 条 ({NetworkStatistics.FormatBytes(stats.TotalSendBytes)})", null, NetworkStatistics.FormatBytesPerSec(stats.SendBytesPerSec));
+                    DrawLabelValue("↓ 接收:", $"{stats.TotalRecvCount:N0} 条 ({NetworkStatistics.FormatBytes(stats.TotalRecvBytes)})", null, NetworkStatistics.FormatBytesPerSec(stats.RecvBytesPerSec));
+                    EditorGUILayout.Space(2);
+                    DrawLabelValue("消息速率:", $"↑ {stats.SendCountPerSec:F1}/s   ↓ {stats.RecvCountPerSec:F1}/s");
                 }
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
@@ -366,51 +320,16 @@ namespace Pisces.Client.Editor
             {
                 using (new EditorGUILayout.VerticalScope(_boxStyle))
                 {
-                    // 心跳状态
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        GUILayout.Label("心跳间隔:", GUILayout.Width(80));
-                        GUILayout.Label($"{options.HeartbeatIntervalSec} 秒");
-                    }
+                    DrawLabelValue("心跳间隔:", $"{options.HeartbeatIntervalSec} 秒");
+                    DrawLabelValue("上次心跳:", stats.LastHeartbeatRecvTime != default ? NetworkStatistics.FormatTimeAgo(stats.LastHeartbeatRecvTime) : "-");
 
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        GUILayout.Label("上次心跳:", GUILayout.Width(80));
-                        if (stats.LastHeartbeatRecvTime != default)
-                        {
-                            GUILayout.Label(NetworkStatistics.FormatTimeAgo(stats.LastHeartbeatRecvTime));
-                        }
-                        else
-                        {
-                            GUILayout.Label("-");
-                        }
-                    }
+                    var timeoutColor = stats.CurrentHeartbeatTimeoutCount > 0 ? Color.yellow : Color.white;
+                    DrawLabelValue("超时计数:", $"{stats.CurrentHeartbeatTimeoutCount} / {options.HeartbeatTimeoutCount}", new GUIStyle(EditorStyles.label) { normal = { textColor = timeoutColor } });
 
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        GUILayout.Label("超时计数:", GUILayout.Width(80));
-                        var timeoutColor = stats.CurrentHeartbeatTimeoutCount > 0 ? Color.yellow : Color.white;
-                        var prevColor = GUI.color;
-                        GUI.color = timeoutColor;
-                        GUILayout.Label($"{stats.CurrentHeartbeatTimeoutCount} / {options.HeartbeatTimeoutCount}");
-                        GUI.color = prevColor;
-                    }
-
-                    EditorGUILayout.Space(5);
-
-                    // 重连状态
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        GUILayout.Label("自动重连:", GUILayout.Width(80));
-                        GUILayout.Label(options.AutoReconnect ? "是" : "否");
-                    }
-
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        GUILayout.Label("重连次数:", GUILayout.Width(80));
-                        var maxText = options.MaxReconnectCount == 0 ? "∞" : options.MaxReconnectCount.ToString();
-                        GUILayout.Label($"{stats.ReconnectCount} / {maxText}");
-                    }
+                    EditorGUILayout.Space(2);
+                    DrawLabelValue("自动重连:", options.AutoReconnect ? "是" : "否");
+                    var maxText = options.MaxReconnectCount == 0 ? "∞" : options.MaxReconnectCount.ToString();
+                    DrawLabelValue("重连次数:", $"{stats.ReconnectCount} / {maxText}");
                 }
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
@@ -423,171 +342,65 @@ namespace Pisces.Client.Editor
             {
                 using (new EditorGUILayout.VerticalScope(_boxStyle))
                 {
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        GUILayout.Label("同步状态:", GUILayout.Width(80));
-                        GUILayout.Label(TimeUtils.IsSynced ? "✓ 已同步" : "✗ 未同步");
-                    }
-
+                    DrawLabelValue("同步状态:", TimeUtils.IsSynced ? "✓ 已同步" : "✗ 未同步");
                     if (TimeUtils.IsSynced)
                     {
-                        using (new EditorGUILayout.HorizontalScope())
-                        {
-                            GUILayout.Label("服务器时间:", GUILayout.Width(80));
-                            GUILayout.Label(TimeUtils.ServerTimeString);
-                        }
-
-                        using (new EditorGUILayout.HorizontalScope())
-                        {
-                            GUILayout.Label("RTT:", GUILayout.Width(80));
-                            GUILayout.Label($"{TimeUtils.RttMs:F0} ms");
-                        }
+                        DrawLabelValue("服务器时间:", TimeUtils.ServerTimeString);
+                        DrawLabelValue("RTT:", $"{TimeUtils.RttMs:F0} ms");
                     }
-
                     EditorGUILayout.Space(5);
-
-                    if (GUILayout.Button("请求同步", GUILayout.Width(80)))
-                    {
-                        PiscesSdk.Instance.RequestTimeSync();
-                    }
+                    if (GUILayout.Button("手动同步", GUILayout.Width(80))) PiscesSdk.Instance.RequestTimeSync();
                 }
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
         }
 
-        private void DrawLogSection(NetworkStatistics stats)
+        private void DrawLabelValue(string label, string value, GUIStyle valueStyle = null, string rightValue = null)
         {
-            _logFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(_logFoldout, $"消息日志 ({stats.LogCount})");
-            if (_logFoldout)
-            {
-                // 日志工具栏
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    // 过滤器
-                    GUILayout.Label("过滤:", GUILayout.Width(35));
-                    _logTypeFilter = EditorGUILayout.Popup(_logTypeFilter, new[] { "全部", "发送 ↑", "接收 ↓" }, GUILayout.Width(80));
-
-                    _logFilter = EditorGUILayout.TextField(_logFilter, EditorStyles.toolbarSearchField);
-
-                    _autoScroll = GUILayout.Toggle(_autoScroll, "自动滚动", GUILayout.Width(70));
-
-                    if (GUILayout.Button("清除", GUILayout.Width(50)))
-                    {
-                        stats.ClearLogs();
-                        _cachedLogs.Clear();
-                    }
-                }
-
-                EditorGUILayout.Space(3);
-
-                // 刷新日志缓存
-                if (stats.LogCount != _lastLogCount)
-                {
-                    _cachedLogs = stats.GetLogs(100);
-                    _lastLogCount = stats.LogCount;
-                }
-
-                // 日志列表
-                var logAreaHeight = Mathf.Max(150, position.height - 450);
-                using (var scrollView = new EditorGUILayout.ScrollViewScope(_logScrollPosition, GUILayout.Height(logAreaHeight)))
-                {
-                    _logScrollPosition = scrollView.scrollPosition;
-
-                    foreach (var log in _cachedLogs)
-                    {
-                        switch (_logTypeFilter)
-                        {
-                            // 应用过滤
-                            case 1 when !log.IsOutgoing:
-                            case 2 when log.IsOutgoing:
-                                continue;
-                        }
-
-                        if (!string.IsNullOrEmpty(_logFilter))
-                        {
-                            if (!log.CmdDisplay.Contains(_logFilter))
-                            {
-                                continue;
-                            }
-                        }
-
-                        DrawLogEntry(log);
-                    }
-
-                    // 自动滚动
-                    if (_autoScroll && Event.current.type == EventType.Repaint)
-                    {
-                        _logScrollPosition = new Vector2(0, 0);
-                    }
-                }
-            }
-            EditorGUILayout.EndFoldoutHeaderGroup();
-        }
-
-        private void DrawLogEntry(NetworkMessageLog log)
-        {
-            var style = log.IsOutgoing ? _logSendStyle : _logRecvStyle;
-            var arrow = log.IsOutgoing ? "↑" : "↓";
-            var timeStr = log.Timestamp.ToString("HH:mm:ss.fff");
-
-            // 命令显示
-            var cmdStr = log.CmdDisplay;
-
-            // MsgId 显示
-            var msgIdStr = log.MsgId != 0 ? $" #{log.MsgId}" : "";
-
-            // 广播标记
-            var broadcastStr = log.IsBroadcast ? " <color=cyan>[广播]</color>" : "";
-
-            // 数据大小
-            var sizeStr = log.DataSize > 0 ? $" ({log.DataSize}B)" : "";
-
-            // 响应耗时显示
-            var elapsedStr = "";
-            if (!log.IsOutgoing && log.ElapsedMs.HasValue)
-            {
-                var elapsed = log.ElapsedMs.Value;
-                var color = elapsed < 100 ? "lime" : elapsed < 500 ? "yellow" : "red";
-                elapsedStr = $" <color={color}>[{elapsed:F0}ms]</color>";
-            }
-
-            // 错误状态显示
-            var errorStr = "";
-            if (!log.IsSuccess)
-            {
-                var errorMsg = !string.IsNullOrEmpty(log.ValidMsg) ? log.ValidMsg : $"Status:{log.ResponseStatus}";
-                errorStr = $" <color=red>[ERR:{log.ResponseStatus}] {errorMsg}</color>";
-            }
-
-            var text = $"{timeStr} {arrow} {cmdStr}{msgIdStr}{sizeStr}{broadcastStr}{elapsedStr}{errorStr}";
-
             using (new EditorGUILayout.HorizontalScope())
             {
-                GUILayout.Label(text, style);
+                GUILayout.Label(label, GUILayout.Width(80));
+                GUILayout.Label(value, valueStyle ?? EditorStyles.label);
+                if (!string.IsNullOrEmpty(rightValue))
+                {
+                    GUILayout.FlexibleSpace();
+                    GUILayout.Label(rightValue, _logInfoStyle, GUILayout.Width(100));
+                }
             }
         }
 
-        private string GetStateText(ConnectionState state)
+        private void DrawNotPlayingUI()
         {
-            return state switch
+            EditorGUILayout.Space(50);
+            using (new EditorGUILayout.VerticalScope())
             {
-                ConnectionState.Disconnected => "已断开",
-                ConnectionState.Connecting => "连接中...",
-                ConnectionState.Connected => "已连接",
-                ConnectionState.Reconnecting => "重连中...",
-                ConnectionState.Closed => "已关闭",
-                _ => state.ToString()
-            };
+                GUILayout.Label("Pisces 网络监控", _headerStyle, GUILayout.ExpandWidth(true));
+                EditorGUILayout.HelpBox("请在运行模式 (Play Mode) 下查看实时网络数据", MessageType.Info);
+                if (GUILayout.Button("打开项目设置", GUILayout.Width(120))) SettingsService.OpenProjectSettings("Project/Pisces Client");
+            }
         }
 
-        private GUIStyle GetStateStyle(ConnectionState state)
+        private void DrawNotInitializedUI()
         {
-            return state switch
-            {
-                ConnectionState.Connected => _statusConnectedStyle,
-                ConnectionState.Reconnecting or ConnectionState.Connecting => _statusReconnectingStyle,
-                _ => _statusDisconnectedStyle
-            };
+            EditorGUILayout.Space(50);
+            EditorGUILayout.HelpBox("Pisces SDK 未初始化\n请确保在代码中调用了 PiscesSdk.Instance.Initialize()", MessageType.Warning);
         }
+
+        private string GetStateText(ConnectionState state) => state switch
+        {
+            ConnectionState.Disconnected => "已断开",
+            ConnectionState.Connecting => "正在连接",
+            ConnectionState.Connected => "已连接",
+            ConnectionState.Reconnecting => "尝试重连",
+            ConnectionState.Closed => "已关闭",
+            _ => state.ToString()
+        };
+
+        private GUIStyle GetStateStyle(ConnectionState state) => state switch
+        {
+            ConnectionState.Connected => _statusConnectedStyle,
+            ConnectionState.Reconnecting or ConnectionState.Connecting => _statusReconnectingStyle,
+            _ => _statusDisconnectedStyle
+        };
     }
 }
