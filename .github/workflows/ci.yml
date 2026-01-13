@@ -42,7 +42,7 @@ jobs:
           fetch-depth: 0
 
       - name: Cache Library
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: Library
           key: Library-${{ matrix.unity-version }}-${{ hashFiles('package.json') }}
