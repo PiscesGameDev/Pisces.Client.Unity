@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Pisces.Client.Sdk;
 using Pisces.Protocol;
 using UnityEngine;
 
@@ -8,7 +9,7 @@ namespace Pisces.Client.Network.Core
     /// <summary>
     /// 网络消息日志条目
     /// </summary>
-    public class NetworkMessageLog
+    internal class NetworkMessageLog
     {
         /// <summary>
         /// 时间戳
@@ -19,6 +20,11 @@ namespace Pisces.Client.Network.Core
         /// 是否为发送消息 (true=发送, false=接收)
         /// </summary>
         public bool IsOutgoing { get; set; }
+
+        /// <summary>
+        /// 消息类型 (Heartbeat, Business, TimeSync, Disconnect)
+        /// </summary>
+        public MessageType MessageType { get; set; }
 
         /// <summary>
         /// 命令合并ID (CmdMerge)
@@ -41,9 +47,29 @@ namespace Pisces.Client.Network.Core
         public bool IsSuccess { get; set; } = true;
 
         /// <summary>
-        /// 错误信息
+        /// 响应状态码
+        /// </summary>
+        public int ResponseStatus { get; set; }
+
+        /// <summary>
+        /// 服务器返回的错误描述
+        /// </summary>
+        public string ValidMsg { get; set; }
+
+        /// <summary>
+        /// 错误信息 (本地生成)
         /// </summary>
         public string ErrorInfo { get; set; }
+
+        /// <summary>
+        /// 请求到响应的耗时（毫秒），仅对响应消息有效
+        /// </summary>
+        public float? ElapsedMs { get; set; }
+
+        /// <summary>
+        /// 是否为广播消息 (接收消息且无MsgId)
+        /// </summary>
+        public bool IsBroadcast => !IsOutgoing && MsgId == 0 && MessageType == MessageType.Business;
 
         /// <summary>
         /// 获取格式化的 Cmd 显示
@@ -55,10 +81,11 @@ namespace Pisces.Client.Network.Core
     /// 网络统计数据
     /// 用于收集和展示网络运行时状态
     /// </summary>
-    public class NetworkStatistics
+    internal class NetworkStatistics
     {
         private const int MaxLogCount = 200;
         private const float RateUpdateInterval = 1f;
+        private const int MaxPendingRequests = 1000;
 
         // 基础统计
         private long _totalSendCount;
@@ -96,6 +123,10 @@ namespace Pisces.Client.Network.Core
         // 消息日志
         private readonly LinkedList<NetworkMessageLog> _messageLogs = new();
         private readonly object _logLock = new();
+
+        // 请求时间追踪（用于计算响应耗时）
+        private readonly Dictionary<int, DateTime> _pendingRequestTimes = new();
+
 
         // 是否启用日志记录
         private bool _enableLogging = true;
@@ -213,19 +244,34 @@ namespace Pisces.Client.Network.Core
         /// <summary>
         /// 记录发送消息
         /// </summary>
-        public void RecordSend(int bytes, int cmdMerge = 0, int msgId = 0)
+        public void RecordSend(int bytes,RequestCommand command)
         {
             _totalSendCount++;
             _totalSendBytes += bytes;
 
-            if (_enableLogging && cmdMerge != 0)
+            // 记录请求发送时间（用于计算响应耗时）
+            if (command.MsgId != 0)
+            {
+                lock (_logLock)
+                {
+                    // 防止内存泄漏，限制追踪数量
+                    if (_pendingRequestTimes.Count >= MaxPendingRequests)
+                    {
+                        _pendingRequestTimes.Clear();
+                    }
+                    _pendingRequestTimes[command.MsgId] = DateTime.Now;
+                }
+            }
+
+            if (_enableLogging)
             {
                 AddLog(new NetworkMessageLog
                 {
                     Timestamp = DateTime.Now,
                     IsOutgoing = true,
-                    CmdMerge = cmdMerge,
-                    MsgId = msgId,
+                    MessageType = command.MessageType,
+                    CmdMerge = command.CmdMerge,
+                    MsgId = command.MsgId,
                     DataSize = bytes,
                     IsSuccess = true
                 });
@@ -238,28 +284,35 @@ namespace Pisces.Client.Network.Core
             var dataSize = message.Data?.Length ?? 0;
             var isSuccess = message.ResponseStatus == 0;
             var errorInfo = isSuccess ? null : $"Status: {message.ResponseStatus}";
-            RecordReceive(dataSize, message.CmdMerge, message.MsgId, isSuccess, errorInfo);
-        }
 
-        /// <summary>
-        /// 记录接收消息
-        /// </summary>
-        private void RecordReceive(int bytes, int cmdMerge = 0, int msgId = 0, bool isSuccess = true, string errorInfo = null)
-        {
+            // 计算响应耗时
+            float? elapsedMs = null;
+            if (message.MsgId != 0)
+            {
+                lock (_logLock)
+                {
+                    if (_pendingRequestTimes.TryGetValue(message.MsgId, out var sendTime))
+                    {
+                        elapsedMs = (float)(DateTime.Now - sendTime).TotalMilliseconds;
+                        _pendingRequestTimes.Remove(message.MsgId);
+                    }
+                }
+            }
+
             _totalRecvCount++;
-            _totalRecvBytes += bytes;
-
-            if (_enableLogging && cmdMerge != 0)
+            _totalRecvBytes += dataSize;
+            if (_enableLogging && message.CmdMerge != 0)
             {
                 AddLog(new NetworkMessageLog
                 {
                     Timestamp = DateTime.Now,
                     IsOutgoing = false,
-                    CmdMerge = cmdMerge,
-                    MsgId = msgId,
-                    DataSize = bytes,
+                    CmdMerge = message.CmdMerge,
+                    MsgId = message.MsgId,
+                    DataSize = dataSize,
                     IsSuccess = isSuccess,
-                    ErrorInfo = errorInfo
+                    ErrorInfo = errorInfo,
+                    ElapsedMs = elapsedMs
                 });
             }
         }
@@ -441,6 +494,11 @@ namespace Pisces.Client.Network.Core
             _rateLimitedCount = 0;
             _sendFailedCount = 0;
             _connectedTime = null;
+
+            lock (_logLock)
+            {
+                _pendingRequestTimes.Clear();
+            }
 
             ClearLogs();
         }

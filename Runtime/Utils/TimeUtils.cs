@@ -8,6 +8,7 @@ namespace Pisces.Client.Utils
     /// </summary>
     public static class TimeUtils
     {
+        private const string TimestampFormat = "yyyy-MM-dd HH:mm:ss";
         private static long _clockOffsetMs;
         private static float _rttMs;
         private static volatile bool _synced;
@@ -38,6 +39,12 @@ namespace Pisces.Client.Utils
         /// 获取服务器时间（DateTime，本地时区）
         /// </summary>
         public static DateTime ServerTime => DateTimeOffset.FromUnixTimeMilliseconds(ServerTimeMs).LocalDateTime;
+
+        /// <summary>
+        /// 获取服务器时间字符串
+        /// </summary>
+        /// <returns></returns>
+        public static string ServerTimeString => ServerTime.ToString(TimestampFormat);
 
         /// <summary>
         /// 获取服务器时间（DateTimeOffset，UTC）

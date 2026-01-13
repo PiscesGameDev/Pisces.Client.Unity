@@ -1,4 +1,4 @@
-using System;
+
 using System.Collections.Generic;
 using Pisces.Client.Network;
 using Pisces.Client.Network.Core;
@@ -7,6 +7,8 @@ using Pisces.Client.Sdk;
 using Pisces.Client.Utils;
 using UnityEditor;
 using UnityEngine;
+using MessageType = Pisces.Protocol.MessageType;
+using Vector2 = UnityEngine.Vector2;
 
 namespace Pisces.Client.Editor
 {
@@ -155,7 +157,7 @@ namespace Pisces.Client.Editor
             var client = PiscesSdk.Instance.Client;
             if (client == null)
             {
-                EditorGUILayout.HelpBox("客户端实例为空", MessageType.Warning);
+                EditorGUILayout.HelpBox("客户端实例为空", UnityEditor.MessageType.Warning);
                 return;
             }
 
@@ -193,7 +195,7 @@ namespace Pisces.Client.Editor
                 {
                     GUILayout.Label("网络监控", _headerStyle ?? EditorStyles.boldLabel);
                     EditorGUILayout.Space(10);
-                    EditorGUILayout.HelpBox("请在运行模式下使用此窗口", MessageType.Info);
+                    EditorGUILayout.HelpBox("请在运行模式下使用此窗口", UnityEditor.MessageType.Info);
 
                     EditorGUILayout.Space(10);
                     if (GUILayout.Button("打开设置", GUILayout.Width(100)))
@@ -213,7 +215,7 @@ namespace Pisces.Client.Editor
                 GUILayout.FlexibleSpace();
                 using (new EditorGUILayout.VerticalScope())
                 {
-                    EditorGUILayout.HelpBox("Pisces SDK 未初始化\n\n请在代码中调用:\nPiscesSdk.Instance.Initialize();", MessageType.Warning);
+                    EditorGUILayout.HelpBox("Pisces SDK 未初始化\n\n请在代码中调用:\nPiscesSdk.Instance.Initialize();", UnityEditor.MessageType.Warning);
                 }
                 GUILayout.FlexibleSpace();
             }
@@ -434,7 +436,7 @@ namespace Pisces.Client.Editor
                         using (new EditorGUILayout.HorizontalScope())
                         {
                             GUILayout.Label("服务器时间:", GUILayout.Width(80));
-                            GUILayout.Label(TimeUtils.ServerTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                            GUILayout.Label(TimeUtils.ServerTimeString);
                         }
 
                         using (new EditorGUILayout.HorizontalScope())
@@ -527,17 +529,59 @@ namespace Pisces.Client.Editor
         private void DrawLogEntry(NetworkMessageLog log)
         {
             var style = log.IsOutgoing ? _logSendStyle : _logRecvStyle;
-            var arrow = log.IsOutgoing ? "→" : "←";
+            var arrow = log.IsOutgoing ? "↑" : "↓";
             var timeStr = log.Timestamp.ToString("HH:mm:ss.fff");
-            var sizeStr = log.DataSize > 0 ? $" ({log.DataSize}B)" : "";
-            var statusStr = log.IsSuccess ? "" : $" <color=red>[{log.ErrorInfo}]</color>";
 
-            var text = $"{timeStr} {arrow} {log.CmdDisplay}{sizeStr}{statusStr}";
+            // MessageType 标签
+            var typeStr = GetMessageTypeTag(log.MessageType);
+
+            // 命令显示（心跳等系统消息不显示命令码）
+            var cmdStr = log.MessageType == MessageType.Business ? $" {log.CmdDisplay}" : "";
+
+            // MsgId 显示
+            var msgIdStr = log.MsgId != 0 ? $" #{log.MsgId}" : "";
+
+            // 广播标记
+            var broadcastStr = log.IsBroadcast ? " <color=cyan>[广播]</color>" : "";
+
+            // 数据大小
+            var sizeStr = log.DataSize > 0 ? $" ({log.DataSize}B)" : "";
+
+            // 响应耗时显示
+            var elapsedStr = "";
+            if (!log.IsOutgoing && log.ElapsedMs.HasValue)
+            {
+                var elapsed = log.ElapsedMs.Value;
+                var color = elapsed < 100 ? "lime" : elapsed < 500 ? "yellow" : "red";
+                elapsedStr = $" <color={color}>[{elapsed:F0}ms]</color>";
+            }
+
+            // 错误状态显示
+            var errorStr = "";
+            if (!log.IsSuccess)
+            {
+                var errorMsg = !string.IsNullOrEmpty(log.ValidMsg) ? log.ValidMsg : $"Status:{log.ResponseStatus}";
+                errorStr = $" <color=red>[ERR:{log.ResponseStatus}] {errorMsg}</color>";
+            }
+
+            var text = $"{timeStr} {arrow} {typeStr}{cmdStr}{msgIdStr}{sizeStr}{broadcastStr}{elapsedStr}{errorStr}";
 
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.Label(text, style);
             }
+        }
+
+        private static string GetMessageTypeTag(MessageType type)
+        {
+            return type switch
+            {
+                MessageType.Business => "<color=white>[BIZ]</color>",
+                MessageType.Heartbeat => "<color=#808080>[HB]</color>",
+                MessageType.TimeSync => "<color=cyan>[TS]</color>",
+                MessageType.Disconnect => "<color=red>[DC]</color>",
+                _ => $"[{type}]"
+            };
         }
 
         private string GetStateText(ConnectionState state)

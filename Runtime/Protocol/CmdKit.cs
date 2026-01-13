@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 
 namespace Pisces.Protocol
 {
@@ -9,7 +10,8 @@ namespace Pisces.Protocol
     {
         // 路由映射表（cmdMerge -> 描述）
         private static readonly Dictionary<int, string> _cmdMapping = new();
-        
+        private static readonly StringBuilder _sb = new(100);
+
         /// <summary>
         /// 获取主命令（高16位）
         /// </summary>
@@ -24,7 +26,7 @@ namespace Pisces.Protocol
         /// 合并命令
         /// </summary>
         public static int Merge(int cmd, int subCmd) => (cmd << 16) | subCmd;
-        
+
         /// <summary>
         /// 格式化器委托
         /// </summary>
@@ -34,10 +36,18 @@ namespace Pisces.Protocol
         // 默认格式化器（结合路由映射）
         private static string DefaultFormatter(int cmd, int subCmd, int mergedCmd)
         {
-            var merged = Merge(cmd, subCmd);
-            return _cmdMapping.TryGetValue(merged, out var title) ? $"【cmd:{cmd}-sub:{subCmd}-merged:{merged}】[{title}]】 " : $"[{cmd}-{subCmd}-{merged}]";
+            _sb.Clear();
+            _sb.Append(cmd).Append(cmd).Append('-')
+                .Append(subCmd).Append('-')
+                .Append(mergedCmd);
+
+            if (_cmdMapping.TryGetValue(mergedCmd, out var title))
+            {
+                _sb.Append('(').Append(title).Append(')');
+            }
+            return _sb.ToString();
         }
-        
+
         // 字符串表示
         public static string ToString(int mergedCmd)
         {
@@ -45,12 +55,12 @@ namespace Pisces.Protocol
             var subCmd = GetSubCmd(mergedCmd);
             return CurrentFormatter(cmd, subCmd, mergedCmd);
         }
-        
+
         public static string ToString(int cmd, int subCmd)
         {
             return CurrentFormatter(cmd, subCmd, Merge(cmd, subCmd));
         }
-        
+
         /// <summary>
         /// 注册映射（由生成代码调用）
         /// </summary>
@@ -60,7 +70,7 @@ namespace Pisces.Protocol
             _cmdMapping[cmdMerge] = description;
             return cmdMerge;
         }
-        
+
         /// <summary>
         /// 清除所有映射（用于热重载）
         /// </summary>

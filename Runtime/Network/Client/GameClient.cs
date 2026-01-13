@@ -33,7 +33,7 @@ namespace Pisces.Client.Network
         /// <summary>
         /// 网络统计数据
         /// </summary>
-        public NetworkStatistics Statistics => _statistics;
+        internal NetworkStatistics Statistics => _statistics;
 
         #region 事件
         public event Action<ConnectionState> OnStateChanged;
@@ -45,7 +45,7 @@ namespace Pisces.Client.Network
         /// </summary>
         public event Action<DisconnectNotify> OnDisconnectNotify;
         #endregion
-        
+
 
         public GameClient(GameClientOptions options = null)
         {
@@ -118,7 +118,7 @@ namespace Pisces.Client.Network
             try
             {
                 newChannel = ChannelFactory.Create(_options.ChannelType);
-                
+
                 // 初始化通道
                 newChannel.OnInit();
 
@@ -143,7 +143,7 @@ namespace Pisces.Client.Network
             catch (OperationCanceledException)
             {
                 CleanupChannel(newChannel);
-                
+
                 var ex = new TimeoutException(
                     $"Connect timeout after {_options.ConnectTimeoutMs}ms to {_options.Host}:{_options.Port}"
                 );
@@ -153,7 +153,7 @@ namespace Pisces.Client.Network
             catch (Exception ex)
             {
                 CleanupChannel(newChannel);
-                
+
                 _stateMachine.TryTransition(ConnectionState.Disconnected, out _);
                 GameLogger.LogError($"[GameClient] 连接失败: {ex.Message}");
                 OnError?.Invoke(ex);

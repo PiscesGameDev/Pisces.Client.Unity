@@ -133,14 +133,13 @@ namespace Pisces.Client.Network
                 // 发送请求
                 var message = CreateExternalMessage(command);
                 var packet = PacketCodec.Encode(message);
+                // 记录统计
+                _statistics.RecordSend(packet.Length, command);
 
                 if (!_channel.Send(packet))
                 {
                     throw new InvalidOperationException("通道发送失败");
                 }
-
-                // 记录统计
-                _statistics.RecordSend(packet.Length, command.CmdMerge, command.MsgId);
 
                 // 非业务消息不需要等待响应
                 if (pendingInfo == null)
@@ -225,10 +224,8 @@ namespace Pisces.Client.Network
                 {
                     _statistics.RecordHeartbeatSend();
                 }
-                else
-                {
-                    _statistics.RecordSend(packet.Length, command.CmdMerge, command.MsgId);
-                }
+
+                _statistics.RecordSend(packet.Length, command);
 
                 return SendResult.Success;
             }
@@ -288,7 +285,7 @@ namespace Pisces.Client.Network
         private void ProcessMessage(ExternalMessage message)
         {
             if (message == null) return;
-            
+
             // 判断是心跳响应还是业务消息
             if (message.MessageType == MessageType.Heartbeat)
             {
@@ -301,7 +298,7 @@ namespace Pisces.Client.Network
 
             // 记录接收统计
             _statistics.RecordReceive(message);
-            
+
             // 时间同步
             if (message.MessageType == MessageType.TimeSync)
             {
@@ -316,7 +313,7 @@ namespace Pisces.Client.Network
                 ProcessDisconnectNotify(message);
                 return;
             }
-            
+
             // 创建响应消息
             var response = ReferencePool<ResponseMessage>.Spawn();
             response.Initialize(message);
