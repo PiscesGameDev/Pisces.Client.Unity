@@ -278,8 +278,21 @@ var options = new GameClientOptions
 
 ## 编辑器工具
 
-- **Project Settings → Pisces**: 可视化配置服务器环境、网络参数
-- **Window → Pisces → Network Monitor**: 实时监控连接状态、消息统计
+### Project Settings
+
+`Edit → Project Settings → Pisces Client`
+
+可视化配置服务器环境、网络参数、心跳、重连等设置。
+
+![Pisces Settings](.github/images/settings.png)
+
+### Network Monitor
+
+`Tools → Pisces Client → 网络监控`
+
+运行时监控连接状态、网络统计、消息日志。
+
+![Network Monitor](.github/images/monitor.png)
 
 ---
 
