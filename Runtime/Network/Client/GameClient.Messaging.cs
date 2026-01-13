@@ -287,9 +287,8 @@ namespace Pisces.Client.Network
 
         private void ProcessMessage(ExternalMessage message)
         {
-            if (message == null)
-                return;
-
+            if (message == null) return;
+            
             // 判断是心跳响应还是业务消息
             if (message.MessageType == MessageType.Heartbeat)
             {
@@ -300,6 +299,9 @@ namespace Pisces.Client.Network
                 return;
             }
 
+            // 记录接收统计
+            _statistics.RecordReceive(message);
+            
             // 时间同步
             if (message.MessageType == MessageType.TimeSync)
             {
@@ -314,10 +316,7 @@ namespace Pisces.Client.Network
                 ProcessDisconnectNotify(message);
                 return;
             }
-
-            // 记录接收统计
-            _statistics.RecordReceive(message);
-
+            
             // 创建响应消息
             var response = ReferencePool<ResponseMessage>.Spawn();
             response.Initialize(message);

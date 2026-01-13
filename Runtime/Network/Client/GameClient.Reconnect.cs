@@ -177,29 +177,9 @@ namespace Pisces.Client.Network
                     );
                 }
 
-                // 连接成功，清理旧通道并替换
-                if (_channel != null)
-                {
-                    _channel.ReceiveMessageEvent -= OnChannelReceiveMessage;
-                    _channel.DisconnectServerEvent -= OnChannelDisconnect;
-                    CleanupChannel(_channel);
-                }
-
-                _channel = newChannel;
-                _channel.ReceiveMessageEvent += OnChannelReceiveMessage;
-                _channel.DisconnectServerEvent += OnChannelDisconnect;
-
-                _stateMachine.TryTransition(ConnectionState.Connected, out _);
                 _reconnectCount = 0;
-                _statistics.RecordConnected();
-                _statistics.ResetReconnectCount();
-
-                StartHeartbeat();
-
-                // 启动待处理请求清理
-                StartPendingRequests();
-
-                GameLogger.Log($"[GameClient] 已连接到 {_options.Host}:{_options.Port}");
+                // 连接成功，完成后续处理
+                FinalizeConnection(newChannel, isReconnect: true);
             }
             catch (TimeoutException)
             {

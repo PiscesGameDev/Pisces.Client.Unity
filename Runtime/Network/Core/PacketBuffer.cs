@@ -30,6 +30,7 @@ namespace Pisces.Client.Network.Core
         private int _writePos;
         private readonly int _initialSize;
         private readonly int _shrinkThreshold;
+        private readonly List<ExternalMessage> _packetsCache = new();
 
         /// <summary>
         /// 缓冲区中的数据长度
@@ -69,11 +70,12 @@ namespace Pisces.Client.Network.Core
 
         /// <summary>
         /// 尝试读取完整的数据包
+        /// 注意：返回的列表会在下次调用时被清空，调用者应立即处理
         /// </summary>
         /// <returns>读取到的完整消息列表</returns>
         public List<ExternalMessage> ReadPackets()
         {
-            var packets = new List<ExternalMessage>();
+            _packetsCache.Clear();
             var readPos = 0;
 
             while (readPos + PacketCodec.HeaderSize <= _writePos)
@@ -101,7 +103,7 @@ namespace Pisces.Client.Network.Core
 
                 if (message != null)
                 {
-                    packets.Add(message);
+                    _packetsCache.Add(message);
                 }
 
                 readPos += packetLength;
@@ -121,7 +123,7 @@ namespace Pisces.Client.Network.Core
                 TryShrink();
             }
 
-            return packets;
+            return _packetsCache;
         }
 
         /// <summary>

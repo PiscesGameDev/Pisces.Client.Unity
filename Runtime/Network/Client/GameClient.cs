@@ -26,8 +26,7 @@ namespace Pisces.Client.Network
 
         public ConnectionState State => _stateMachine.CurrentState;
 
-        public bool IsConnected =>
-            _stateMachine.IsConnected && _channel?.IsConnected == true;
+        public bool IsConnected => _stateMachine.IsConnected && _channel?.IsConnected == true;
 
         public GameClientOptions Options => _options;
 
@@ -138,26 +137,8 @@ namespace Pisces.Client.Network
                 // 等待连接真正建立
                 await UniTask.WaitUntil(() => newChannel.IsConnected, cancellationToken: cts.Token);
 
-                // 连接成功，清理旧通道并替换
-                var oldChannel = Interlocked.Exchange(ref _channel, newChannel);
-                CleanupChannel(oldChannel);
-
-                // 订阅新通道事件
-                _channel.ReceiveMessageEvent += OnChannelReceiveMessage;
-                _channel.DisconnectServerEvent += OnChannelDisconnect;
-
-                _stateMachine.TryTransition(ConnectionState.Connected, out _);
-                _reconnectCount = 0;
-                _statistics.RecordConnected();
-                _statistics.ResetReconnectCount();
-
-                // 启动心跳
-                StartHeartbeat();
-
-                // 启动待处理请求清理
-                StartPendingRequests();
-
-                GameLogger.Log($"[GameClient] 已连接到 {_options.Host}:{_options.Port}");
+                // 连接成功，完成后续处理
+                FinalizeConnection(newChannel, isReconnect: false);
             }
             catch (OperationCanceledException)
             {
@@ -178,6 +159,35 @@ namespace Pisces.Client.Network
                 OnError?.Invoke(ex);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// 完成连接建立后的处理
+        /// </summary>
+        /// <param name="newChannel">新建立的通道</param>
+        /// <param name="isReconnect">是否为重连</param>
+        private void FinalizeConnection(IProtocolChannel newChannel, bool isReconnect)
+        {
+            // 1. 清理旧通道并替换
+            var oldChannel = Interlocked.Exchange(ref _channel, newChannel);
+            CleanupChannel(oldChannel);
+
+            // 2. 订阅新通道事件
+            _channel.ReceiveMessageEvent += OnChannelReceiveMessage;
+            _channel.DisconnectServerEvent += OnChannelDisconnect;
+
+            // 3. 状态转换和统计
+            _stateMachine.TryTransition(ConnectionState.Connected, out _);
+            _statistics.RecordConnected();
+            _statistics.ResetReconnectCount();
+
+            // 4. 启动服务
+            StartHeartbeat();
+            StartPendingRequests();
+
+            // 5. 日志
+            var connectType = isReconnect ? "重连" : "连接";
+            GameLogger.Log($"[GameClient] {connectType}成功 - {_options.Host}:{_options.Port}");
         }
 
         /// <summary>
