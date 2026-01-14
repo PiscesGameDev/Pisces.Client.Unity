@@ -2,8 +2,9 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Pisces.Client.Sdk;
+using Pisces.Client.Unity;
 using Pisces.Client.Utils;
-using UnityEngine;
+
 
 namespace Pisces.Client.Network
 {
@@ -36,7 +37,7 @@ namespace Pisces.Client.Network
 
         private async UniTaskVoid HeartbeatLoop(CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested && IsConnected && Application.isPlaying)
+            while (!cancellationToken.IsCancellationRequested && IsConnected && PiscesLifecycleManager.IsPlaying)
             {
                 try
                 {
@@ -47,7 +48,7 @@ namespace Pisces.Client.Network
                     );
 
                     // Unity 退出或连接断开时停止
-                    if (!Application.isPlaying || !IsConnected)
+                    if (!PiscesLifecycleManager.IsPlaying || !IsConnected)
                         break;
 
                     // 先递增计数（表示即将发送一个待确认的心跳）
