@@ -248,7 +248,6 @@ namespace Pisces.Client.Network.Channel
             }
             catch (Exception ex)
             {
-                GameLogger.LogError($"[{ChannelType}Channel] 连接失败: {ex.Message}");
                 _isConnected = false;
                 throw;
             }
