@@ -214,7 +214,7 @@ namespace Pisces.Client.Sdk
                 return;
 
             var command = RequestCommand.TimeSync();
-            _connectionManager.Client.SendRequest(command);
+            Send(command);
         }
 
         #endregion
@@ -308,8 +308,7 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 发送请求（仅发送，不等待响应）
         /// </summary>
-        public void Send<TRequest>(int cmdMerge, TRequest request)
-            where TRequest : IMessage
+        public void Send<TRequest>(int cmdMerge, TRequest request) where TRequest : IMessage
         {
             if (!IsInitialized)
                 return;
@@ -342,8 +341,7 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 发送请求并在收到响应时执行回调（无请求体，泛型响应）
         /// </summary>
-        public void Send<TResponse>(int cmdMerge, Action<TResponse> callback)
-            where TResponse : IMessage, new()
+        public void Send<TResponse>(int cmdMerge, Action<TResponse> callback) where TResponse : IMessage, new()
         {
             if (!IsInitialized)
                 return;
@@ -353,13 +351,7 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 发送请求并在收到响应时执行回调（有请求体，泛型响应）
         /// </summary>
-        public void Send<TRequest, TResponse>(
-            int cmdMerge,
-            TRequest request,
-            Action<TResponse> callback
-        )
-            where TRequest : IMessage
-            where TResponse : IMessage, new()
+        public void Send<TRequest, TResponse>(int cmdMerge, TRequest request, Action<TResponse> callback) where TRequest : IMessage where TResponse : IMessage, new()
         {
             if (!IsInitialized)
                 return;
@@ -369,8 +361,7 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 发送请求并在收到响应时执行回调（有请求体，原始响应）
         /// </summary>
-        public void Send<TRequest>(int cmdMerge, TRequest request, Action<ResponseMessage> callback)
-            where TRequest : IMessage
+        public void Send<TRequest>(int cmdMerge, TRequest request, Action<ResponseMessage> callback) where TRequest : IMessage
         {
             if (!IsInitialized)
                 return;
@@ -405,8 +396,7 @@ namespace Pisces.Client.Sdk
         /// 订阅指定 cmdMerge 的服务器推送消息（泛型版本，自动解包）
         /// </summary>
         /// <returns>用于取消订阅的 IDisposable</returns>
-        public IDisposable Subscribe<TMessage>(int cmdMerge, Action<TMessage> callback)
-            where TMessage : IMessage, new()
+        public IDisposable Subscribe<TMessage>(int cmdMerge, Action<TMessage> callback) where TMessage : IMessage, new()
         {
             EnsureInitialized();
             return _messageRouter.Subscribe(cmdMerge, callback);
@@ -419,8 +409,7 @@ namespace Pisces.Client.Sdk
         /// <param name="callback">消息处理回调</param>
         /// <param name="parser">消息解析器，通常使用 YourMessage.Parser</param>
         /// <returns>用于取消订阅的 IDisposable</returns>
-        public IDisposable Subscribe<TMessage>(int cmdMerge, Action<TMessage> callback, MessageParser<TMessage> parser)
-            where TMessage : IMessage<TMessage>
+        public IDisposable Subscribe<TMessage>(int cmdMerge, Action<TMessage> callback, MessageParser<TMessage> parser) where TMessage : IMessage<TMessage>
         {
             EnsureInitialized();
             return _messageRouter.Subscribe(cmdMerge, callback, parser);

@@ -42,18 +42,18 @@ namespace Pisces.Client.Network
         /// </summary>
         void Close();
 
-        /// <summary>
-        ///  发送请求
-        /// </summary>
-        /// <param name="command"></param>
-        /// <returns></returns>
-        PiscesCode SendRequest(RequestCommand command);
 
         /// <summary>
-        ///  发送请求
+        /// 发送指令
         /// </summary>
-        /// <param name="command"></param>
-        /// <param name="cancellationToken"></param>
+        /// <param name="command">请求指令</param>
+        void Send(RequestCommand command);
+
+        /// <summary>
+        ///  发送请求，等待响应
+        /// </summary>
+        /// <param name="command">请求指令</param>
+        /// <param name="cancellationToken">取消Token</param>
         /// <returns></returns>
         UniTask<ResponseMessage> RequestAsync(RequestCommand command, CancellationToken cancellationToken = default);
 

@@ -46,7 +46,12 @@ namespace Pisces.Client.Network.Core
         /// <summary>
         /// 重复的消息ID
         /// </summary>
-        DuplicateMsgId
+        DuplicateMsgId,
+
+        /// <summary>
+        /// 未知错误
+        /// </summary>
+        Unknown,
     }
 
     internal static class PiscesCodeHelper

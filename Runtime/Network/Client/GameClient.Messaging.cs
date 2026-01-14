@@ -11,7 +11,7 @@ using Pisces.Protocol;
 namespace Pisces.Client.Network
 {
     /// <summary>
-    /// GameClient - 消息收发部分
+    /// GameClient - 消息收发逻辑部分
     /// </summary>
     public partial class GameClient
     {
@@ -28,9 +28,10 @@ namespace Pisces.Client.Network
 
         /// <summary>
         /// 消息发送失败事件
-        /// 参数：CmdMerge, MsgId, 失败原因
+        /// 参数：CmdInfo, MsgId, 失败原因
         /// </summary>
         public event Action<CmdInfo, int, PiscesCode> OnSendFailed;
+
 
         /// <summary>
         /// 初始化消息模块
@@ -59,193 +60,146 @@ namespace Pisces.Client.Network
             _receiveBuffer = null;
         }
 
+
         /// <summary>
-        /// 尝试验证发送状态
+        ///  发送请求，不等待响应
         /// </summary>
-        /// <returns>验证失败时返回失败原因，成功时返回 null</returns>
-        private PiscesCode? TryValidateSendState()
+        /// <param name="command"></param>
+        public void Send(RequestCommand command)
         {
-            if (_disposed || _isClosed)
-                return PiscesCode.ClientClosed;
-
-            if (!IsConnected)
-                return PiscesCode.NotConnected;
-
-            return null;
+            RequestAsyncCore(command,false).Forget();
         }
 
         /// <summary>
-        /// 发送请求并等待响应
+        /// 发送请求，等待响应
         /// </summary>
-        /// <param name="command">请求命令</param>
-        /// <param name="cancellationToken">取消令牌</param>
-        /// <returns>响应消息</returns>
-        public async UniTask<ResponseMessage> RequestAsync(RequestCommand command, CancellationToken cancellationToken = default)
+        /// <param name="command"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async UniTask<ResponseMessage> RequestAsync(RequestCommand command,  CancellationToken cancellationToken = default)
         {
-            EnsureInitialized();
-            if (command == null)
-            {
-                throw new PiscesException(PiscesCode.InvalidRequestCommand);
-            }
-
-            // 非业务消息不需要等待响应，直接发送
-            if (command.MessageType != MessageType.Business)
-            {
-                var result = SendInternal(command, out var pktLen);
-                if (result != PiscesCode.Success)
-                {
-                    throw new PiscesException(result, command);
-                }
-
-                _statistics.RecordSend(pktLen, command);
-                ReferencePool<RequestCommand>.Despawn(command);
-                return null;
-            }
-
-            // 业务请求去重检查
-            if (!TryLockRoute(command.CmdInfo))
-            {
-                throw new PiscesException(PiscesCode.RequestLocked, command);
-            }
-
-            // 创建等待响应的信息
-            var tcs = new UniTaskCompletionSource<ResponseMessage>();
-            var pendingInfo = new PendingRequestInfo
-            {
-                Tcs = tcs,
-                CreatedTicks = Stopwatch.GetTimestamp(),
-                CmdInfo = command.CmdInfo,
-                MsgId = command.MsgId
-            };
-
-            // 添加到等待列表
-            if (!_pendingRequests.TryAdd(command.MsgId, pendingInfo))
-            {
-                UnlockRoute(command.CmdInfo);
-                throw new PiscesException(PiscesCode.DuplicateMsgId, command);
-            }
-
-            try
-            {
-                // 发送请求
-                var result = SendInternal(command, out var packetLength);
-                if (result != PiscesCode.Success)
-                {
-                    throw new PiscesException(result, command);
-                }
-
-                // 记录统计
-                _statistics.RecordSend(packetLength, command);
-
-                // 等待响应（带超时）
-                using var timeoutCts = new CancellationTokenSource(_options.RequestTimeoutMs);
-                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
-                    cancellationToken,
-                    timeoutCts.Token
-                );
-
-                var response = await pendingInfo.Tcs.Task.AttachExternalCancellation(linkedCts.Token);
-                return response;
-            }
-            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-            {
-                throw new PiscesException(PiscesCode.Timeout, command);
-            }
-            finally
-            {
-                // 移除等待列表
-                _pendingRequests.TryRemove(command.MsgId, out _);
-
-                // 解锁路由
-                UnlockRoute(command.CmdInfo);
-
-                // 归还到对象池
-                ReferencePool<RequestCommand>.Despawn(command);
-            }
+            return await RequestAsyncCore(command, true, cancellationToken);
         }
 
         /// <summary>
-        /// 发送请求（仅发送，不等待响应）
+        ///  发送请求核心方法
         /// </summary>
-        /// <returns>发送结果</returns>
-        public PiscesCode SendRequest(RequestCommand command)
+        /// <param name="command">请求指令</param>
+        /// <param name="waitForResponse">是否等待响应</param>
+        /// <param name="cancellationToken">取消Token</param>
+        private async UniTask<ResponseMessage> RequestAsyncCore(RequestCommand command, bool waitForResponse = true, CancellationToken cancellationToken = default)
         {
-            if (command == null)
-                return PiscesCode.InvalidRequestCommand;
-
-            var validateResult = TryValidateSendState();
-            if (validateResult.HasValue)
-            {
-                NotifySendFailed(command, validateResult.Value);
-                ReferencePool<RequestCommand>.Despawn(command);
-                return validateResult.Value;
-            }
+            var routeLocked = false;
+            var pendingAdded = false;
+            ResponseMessage response = null;
 
             try
             {
-                // 流量控制（心跳消息豁免）
-                if (_rateLimiter != null && command.MessageType == MessageType.Business)
+                // 1. 基础校验
+                if (_disposed || _isClosed) throw new PiscesException(PiscesCode.ClientClosed);
+                if (!IsConnected) throw new PiscesException(PiscesCode.NotConnected);
+                if (command == null) throw new PiscesException(PiscesCode.InvalidRequestCommand);
+
+                PendingRequestInfo pendingInfo = null;
+
+                // 2. 业务消息加锁和限流
+                if (command.MessageType == MessageType.Business)
                 {
-                    if (!_rateLimiter.TryAcquire())
+                    if (!TryLockRoute(command.CmdInfo))
+                    {
+                        throw new PiscesException(PiscesCode.RequestLocked);
+                    }
+
+                    routeLocked = true;
+
+                    if (_rateLimiter != null && !_rateLimiter.TryAcquire())
                     {
                         _statistics.RecordRateLimited();
-                        NotifySendFailed(command, PiscesCode.RateLimited);
-                        return PiscesCode.RateLimited;
+                        throw new PiscesException(PiscesCode.RateLimited);
                     }
                 }
 
-                var result = SendInternal(command, out var packetLength);
-                if (result != PiscesCode.Success)
+                // 3. 如果需要等待响应，创建等待任务
+                if (waitForResponse && command.MessageType == MessageType.Business)
                 {
-                    NotifySendFailed(command, result);
-                    return result;
+                    var tcs = new UniTaskCompletionSource<ResponseMessage>();
+                    pendingInfo = new PendingRequestInfo
+                    {
+                        Tcs = tcs,
+                        CreatedTicks = Stopwatch.GetTimestamp(),
+                        CmdInfo = command.CmdInfo,
+                        MsgId = command.MsgId
+                    };
+
+                    if (!_pendingRequests.TryAdd(command.MsgId, pendingInfo))
+                    {
+                         throw new PiscesException(PiscesCode.DuplicateMsgId);
+                    }
+                    pendingAdded = true;
                 }
 
-                // 记录统计 (心跳消息特殊处理)
-                if (command.MessageType == MessageType.Heartbeat)
+                // 4. 发送消息
+                var sendResult = SendInternal(command, out var packetLength);
+                if (sendResult != PiscesCode.Success)
                 {
-                    _statistics.RecordHeartbeatSend();
+                    _statistics.RecordSendFailed();
+                    GameLogger.LogWarning($"[GameClient] 发送失败: {command.CmdInfo}, MsgId={command.MsgId}, 原因={sendResult}");
+                    OnSendFailed?.Invoke(command.CmdInfo, command.MsgId, sendResult);
+
+                    throw new PiscesException(sendResult);
                 }
+
+                // 5. 统计记录
+                if (command.MessageType == MessageType.Heartbeat)
+                    _statistics.RecordHeartbeatSend();
 
                 _statistics.RecordSend(packetLength, command);
 
-                return PiscesCode.Success;
+                // 6. 如果需要等待响应，等待
+                if (waitForResponse && pendingInfo != null)
+                {
+                    using var timeoutCts = new CancellationTokenSource(_options.RequestTimeoutMs);
+                    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
+                    try
+                    {
+                        response = await pendingInfo.Tcs.Task.AttachExternalCancellation(linkedCts.Token);
+                    }
+                    catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                    {
+                        throw new PiscesException(PiscesCode.Timeout);
+                    }
+                }
+                return response;
             }
             finally
             {
-                ReferencePool<RequestCommand>.Despawn(command);
+                if (command != null)
+                {
+                    // 7. 统一清理
+                    if (pendingAdded)
+                        _pendingRequests.TryRemove(command.MsgId, out _);
+
+                    if (routeLocked)
+                        UnlockRoute(command.CmdInfo);
+
+                    // 回收请求指令
+                    ReferencePool<RequestCommand>.Despawn(command);
+                }
+
             }
         }
 
-        /// <summary>
-        /// 通知发送失败
-        /// </summary>
-        private void NotifySendFailed(RequestCommand command, PiscesCode result)
-        {
-            GameLogger.LogWarning($"[GameClient] 发送失败: {command.CmdInfo.ToString()}, MsgId={command.MsgId}, 原因={result}");
-            _statistics.RecordSendFailed();
-            OnSendFailed?.Invoke(command.CmdInfo, command.MsgId, result);
-        }
+        #region 内部发送实现
 
-        private ExternalMessage CreateExternalMessage(RequestCommand command)
+        private PiscesCode SendInternal(RequestCommand command, out int packetLength)
         {
             var message = ReferencePool<ExternalMessage>.Spawn();
             message.MessageType = command.MessageType;
             message.CmdMerge = command.CmdInfo;
             message.MsgId = command.MsgId;
             message.Data = command.Data;
-            return message;
-        }
 
-        /// <summary>
-        /// 内部发送方法，统一消息编码和发送逻辑
-        /// </summary>
-        /// <param name="command">请求命令</param>
-        /// <param name="packetLength">发送成功时的数据包长度</param>
-        /// <returns>发送结果</returns>
-        private PiscesCode SendInternal(RequestCommand command, out int packetLength)
-        {
-            var message = CreateExternalMessage(command);
             var packet = PacketCodec.Encode(message);
             ReferencePool<ExternalMessage>.Despawn(message);
 
@@ -259,18 +213,18 @@ namespace Pisces.Client.Network
             return PiscesCode.Success;
         }
 
-        #region 响应消息处理
+        #endregion
+
+        #region 消息接收与处理逻辑
+
         private void OnChannelReceiveMessage(IProtocolChannel channel, ArraySegment<byte> data)
         {
-            if (_disposed || data.Count == 0)
-                return;
+            if (_disposed || data.Count == 0) return;
 
             try
             {
-                // 写入缓冲区并尝试解析完整数据包
                 _receiveBuffer.Write(data);
                 var messages = _receiveBuffer.ReadPackets();
-
                 foreach (var message in messages)
                 {
                     ProcessMessage(message);
@@ -278,7 +232,7 @@ namespace Pisces.Client.Network
             }
             catch (Exception ex)
             {
-                GameLogger.LogError($"[GameClient] 处理消息失败: {ex.Message}");
+                GameLogger.LogError($"[GameClient] 消息包解析失败: {ex.Message}");
                 OnError?.Invoke(ex);
             }
         }
@@ -290,10 +244,12 @@ namespace Pisces.Client.Network
             switch (message.MessageType)
             {
                 case MessageType.Heartbeat:
-                    ProcessHeartbeat();
+                    _heartbeatTimeoutCount = 0;
+                    _statistics.RecordHeartbeatReceive();
                     break;
                 case MessageType.TimeSync:
-                    ProcessTimeSync(message);
+                    var timeSyncMsg = TimeSyncMessage.Parser.ParseFrom(message.Data);
+                    TimeUtils.UpdateSync(timeSyncMsg.ClientTime, timeSyncMsg.ServerTime);
                     break;
                 case MessageType.Disconnect:
                     ProcessDisconnectNotify(message);
@@ -304,65 +260,48 @@ namespace Pisces.Client.Network
             }
         }
 
-        private void ProcessHeartbeat()
-        {
-            _heartbeatTimeoutCount = 0;
-            _statistics.RecordHeartbeatReceive();
-        }
-
-        private void ProcessTimeSync(ExternalMessage message)
-        {
-            var timeSyncMsg = TimeSyncMessage.Parser.ParseFrom(message.Data);
-            TimeUtils.UpdateSync(timeSyncMsg.ClientTime, timeSyncMsg.ServerTime);
-        }
-
         private void ProcessBusinessMessage(ExternalMessage message)
         {
-            // 记录接收统计
             _statistics.RecordReceive(message);
 
-            // 创建响应消息
             var response = ReferencePool<ResponseMessage>.Spawn();
             response.Initialize(message);
 
-            // 尝试匹配等待的请求
+            // 匹配等待中的 RequestAsync
             if (_pendingRequests.TryRemove(message.MsgId, out var pendingInfo))
             {
-                // 匹配到请求，设置响应结果
+                // 触发 Task 完成（RequestAsync 里的 finally 会负责解锁路由）
                 pendingInfo.Tcs?.TrySetResult(response);
             }
 
-            // 触发消息接收事件
-            // 警告：订阅者需要在回调中同步处理或复制所需数据
+            // 触发外部通用的消息监听
             OnMessageReceived?.Invoke(response);
 
-            // 统一释放 response（主线程同步执行，调用者已处理完毕）
+            // 回收资源
             ReferencePool<ResponseMessage>.Despawn(response);
         }
-        #endregion
 
         private void ProcessDisconnectNotify(ExternalMessage message)
         {
-            // 解析断线通知
             var disconnectNotify = DisconnectNotify.Parser.ParseFrom(message.Data);
+            GameLogger.LogWarning(
+                $"[GameClient] 收到服务器主动断线通知: Reason={disconnectNotify.Reason}, Msg={disconnectNotify.Message}");
 
-            GameLogger.LogWarning($"[GameClient] 收到服务器断线通知: Reason={disconnectNotify.Reason}, Message={disconnectNotify.Message}");
-
-            // 触发断线通知事件，让上层处理（如显示提示 UI）
             OnDisconnectNotify?.Invoke(disconnectNotify);
 
-            // 根据断线原因决定是否允许自动重连
+            // 如果该原因不允许自动重连（如：账号异地登陆、被封禁），则彻底关闭客户端
             if (!IsReconnectAllowed(disconnectNotify.Reason))
             {
-                // 禁止重连的情况，直接关闭客户端
-                GameLogger.LogDebug($"[GameClient] 断线原因 {disconnectNotify.Reason} 不允许重连，关闭客户端");
+                GameLogger.LogDebug($"[GameClient] 断线原因为强制退出，不再尝试重连。");
                 Close();
             }
             else
             {
-                // 允许重连的情况，正常断开（会触发自动重连）
+                // 正常断开，触发底层的断线逻辑（通常会进入重连流程）
                 _channel?.Disconnect();
             }
         }
+
+        #endregion
     }
 }

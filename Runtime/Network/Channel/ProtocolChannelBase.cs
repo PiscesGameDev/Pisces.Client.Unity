@@ -246,7 +246,7 @@ namespace Pisces.Client.Network.Channel
 
                 GameLogger.Log($"[{ChannelType}Channel] 已连接到 {host}:{port}");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 _isConnected = false;
                 throw;

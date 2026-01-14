@@ -32,9 +32,7 @@ namespace Pisces.Client.Sdk
         /// </summary>
         public async UniTask<ResponseMessage> RequestAsync(int cmdMerge, CancellationToken cancellationToken = default)
         {
-            EnsureConnected();
-            var command = RequestCommand.Of(cmdMerge);
-            return await _connectionManager.Client.RequestAsync(command, cancellationToken);
+            return await RequestAsync(RequestCommand.Of(cmdMerge),  cancellationToken);
         }
 
         /// <summary>
@@ -42,13 +40,11 @@ namespace Pisces.Client.Sdk
         /// </summary>
         public async UniTask<ResponseMessage> RequestAsync<TRequest>(int cmdMerge, TRequest request, CancellationToken cancellationToken = default) where TRequest : IMessage
         {
-            EnsureConnected();
-            var command = RequestCommand.Of(cmdMerge, request);
-            return await _connectionManager.Client.RequestAsync(command, cancellationToken);
+            return await RequestAsync(RequestCommand.Of(cmdMerge, request), cancellationToken);
         }
 
         /// <summary>
-        /// 直接发送 RequestCommand 并等待响应
+        /// 直接发送 RequestCommand 并等待响应(统一的异步请求入口)
         /// </summary>
         public async UniTask<ResponseMessage> RequestAsync(RequestCommand command, CancellationToken cancellationToken = default)
         {
@@ -89,53 +85,22 @@ namespace Pisces.Client.Sdk
         /// <summary>
         /// 发送请求（仅发送，不等待响应）
         /// </summary>
-        public PiscesCode Send(int cmdMerge)
-            => SendCommand(RequestCommand.Of(cmdMerge));
+        public void Send(int cmdMerge)
+            => Send(RequestCommand.Of(cmdMerge));
 
         /// <summary>
         /// 发送请求（仅发送，不等待响应）
         /// </summary>
-        public PiscesCode Send<TRequest>(int cmdMerge, TRequest request) where TRequest : IMessage
-            => SendCommand(RequestCommand.Of(cmdMerge, request));
+        public void Send<TRequest>(int cmdMerge, TRequest request) where TRequest : IMessage
+            => Send(RequestCommand.Of(cmdMerge, request));
 
-        /// <summary>
-        /// 直接发送 RequestCommand（仅发送，不等待响应）
-        /// </summary>
-        public PiscesCode Send(RequestCommand command)
-        {
-            return SendCommand(command);
-        }
-
-        /// <summary>
-        /// 发送整数值
-        /// </summary>
-        public PiscesCode SendInt(int cmdMerge, int value)
-            => SendCommand(RequestCommand.Of(cmdMerge, value));
-
-        /// <summary>
-        /// 发送字符串值
-        /// </summary>
-        public PiscesCode SendString(int cmdMerge, string value)
-            => SendCommand(RequestCommand.Of(cmdMerge, value));
-
-        /// <summary>
-        /// 发送长整数值
-        /// </summary>
-        public PiscesCode SendLong(int cmdMerge, long value)
-            => SendCommand(RequestCommand.Of(cmdMerge, value));
-
-        /// <summary>
-        /// 发送布尔值
-        /// </summary>
-        public PiscesCode SendBool(int cmdMerge, bool value)
-            => SendCommand(RequestCommand.Of(cmdMerge, value));
 
         /// <summary>
         /// 统一的发送入口
         /// </summary>
-        private PiscesCode SendCommand(RequestCommand command)
+        public void Send(RequestCommand command)
         {
-            return _connectionManager.Client.SendRequest(command);
+            _connectionManager.Client.Send(command);
         }
 
         #endregion
@@ -178,7 +143,7 @@ namespace Pisces.Client.Sdk
             );
 
         /// <summary>
-        /// 直接发送 RequestCommand 并在收到响应时执行回调
+        /// 直接发送 RequestCommand
         /// </summary>
         public void Send(RequestCommand command, Action<ResponseMessage> callback)
         {

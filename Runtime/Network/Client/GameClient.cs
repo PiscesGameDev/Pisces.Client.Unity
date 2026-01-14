@@ -81,11 +81,8 @@ namespace Pisces.Client.Network
 
         public async UniTask ConnectAsync()
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(GameClient));
-
-            if (_isClosed)
-                throw new InvalidOperationException("客户端已关闭");
+            if (_disposed || _isClosed)
+                throw new PiscesException(PiscesCode.ClientClosed);
 
             // 使用状态机检查是否可以连接
             if (!_stateMachine.CanConnect)
@@ -290,18 +287,6 @@ namespace Pisces.Client.Network
             {
                 StartReconnect();
             }
-        }
-
-        /// <summary>
-        /// 检查状态
-        /// </summary>
-        private void EnsureInitialized()
-        {
-            if (_disposed || _isClosed)
-                throw new PiscesException(PiscesCode.ClientClosed);
-
-            if (!IsConnected)
-                throw new PiscesException(PiscesCode.NotConnected);
         }
 
         public void Dispose()

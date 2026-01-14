@@ -15,8 +15,8 @@ namespace Pisces.Client.Network
         // 心跳相关
         private CancellationTokenSource _heartbeatCts;
         private int _heartbeatTimeoutCount;
-        
-        
+
+
         private void StartHeartbeat()
         {
             StopHeartbeat();
@@ -66,7 +66,7 @@ namespace Pisces.Client.Network
 
                     // 发送心跳
                     var heartbeat = RequestCommand.Heartbeat();
-                    SendRequest(heartbeat);
+                    Send(heartbeat);
 
                     if (GameLogger.IsLevelEnabled(GameLogLevel.Verbose))
                     {
