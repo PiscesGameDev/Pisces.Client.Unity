@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Pisces.Client.Network.Channel;
 using Pisces.Client.Utils;
 
@@ -110,6 +111,22 @@ namespace Pisces.Client.Network
 
         #endregion
 
+        #region 请求去重
+
+        /// <summary>
+        /// 是否启用请求去重
+        /// 启用后，同一路由在等待响应期间不能重复发送
+        /// </summary>
+        public bool EnableRequestDedup = true;
+
+        /// <summary>
+        /// 去重排除列表（这些路由不参与去重）
+        /// 使用 CmdMerge 值
+        /// </summary>
+        public HashSet<int> DedupExcludeList = new();
+
+        #endregion
+
         /// <summary>
         /// 克隆配置
         /// </summary>
@@ -135,6 +152,8 @@ namespace Pisces.Client.Network
                 EnableRateLimit = EnableRateLimit,
                 MaxSendRate = MaxSendRate,
                 MaxBurstSize = MaxBurstSize,
+                EnableRequestDedup = EnableRequestDedup,
+                DedupExcludeList = new HashSet<int>(DedupExcludeList),
             };
         }
     }

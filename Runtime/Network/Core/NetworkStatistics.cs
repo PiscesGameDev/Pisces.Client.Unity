@@ -16,7 +16,7 @@ namespace Pisces.Client.Network.Core
     {
         public DateTime Timestamp { get; set; }
         public bool IsOutgoing { get; set; }
-        public int CmdMerge { get; set; }
+        public CmdInfo CmdInfo { get; set; }
         public int MsgId { get; set; }
         public int DataSize { get; set; }
         public bool IsSuccess { get; set; } = true;
@@ -28,11 +28,6 @@ namespace Pisces.Client.Network.Core
         /// 是否为广播消息 (接收消息且无MsgId)
         /// </summary>
         public bool IsBroadcast => !IsOutgoing && MsgId == 0;
-
-        /// <summary>
-        /// 获取格式化的 Cmd 显示
-        /// </summary>
-        public string CmdDisplay => CmdKit.ToString(CmdMerge);
     }
 #endif
 
@@ -177,7 +172,7 @@ namespace Pisces.Client.Network.Core
                 {
                     Timestamp = DateTime.Now,
                     IsOutgoing = true,
-                    CmdMerge = command.CmdMerge,
+                    CmdInfo = command.CmdInfo,
                     MsgId = command.MsgId,
                     DataSize = bytes,
                     IsSuccess = true
@@ -217,7 +212,7 @@ namespace Pisces.Client.Network.Core
             {
                 Timestamp = DateTime.Now,
                 IsOutgoing = false,
-                CmdMerge = message.CmdMerge,
+                CmdInfo = message.CmdMerge,
                 MsgId = message.MsgId,
                 DataSize = dataSize,
                 IsSuccess = message.ResponseStatus == 0,

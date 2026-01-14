@@ -33,7 +33,7 @@ namespace Pisces.Client.Sdk
             : base(FormatMessage(response))
         {
             ResponseStatus = response.ResponseStatus;
-            CmdMerge = response.CmdMerge;
+            CmdMerge = response.CmdInfo;
             MsgId = response.MsgId;
             ErrorMessage = response.ErrorMessage;
         }
@@ -49,7 +49,7 @@ namespace Pisces.Client.Sdk
 
         private static string FormatMessage(ResponseMessage response)
         {
-            var cmdInfo = CmdKit.ToString(response.CmdMerge);
+            var cmdInfo = CmdKit.ToString(response.CmdInfo);
             if (string.IsNullOrEmpty(response.ErrorMessage))
                 return $"[{response.ResponseStatus}] Request failed: {cmdInfo} (MsgId={response.MsgId})";
             return $"[{response.ResponseStatus}] {response.ErrorMessage} ({cmdInfo}, MsgId={response.MsgId})";

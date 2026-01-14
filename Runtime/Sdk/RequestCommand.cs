@@ -20,18 +20,18 @@ namespace Pisces.Client.Sdk
         public int MsgId { get; private set; }
 
         /// <summary>
-        /// 获取业务路由标识。采用合并编码方式：高16位表示主命令，优16位表示子命令。
+        /// 获取业务路由标识
         /// </summary>
-        public int CmdMerge { get; private set; }
+        public CmdInfo CmdInfo { get; private set; }
 
         /// <summary>
         /// 获取请求数据内容
         /// </summary>
         public ByteString Data { get; private set; }
 
-        private void Initialize(int cmdMerge, ByteString data, MessageType messageType = MessageType.Business)
+        private void Initialize(CmdInfo cmdInfo, ByteString data, MessageType messageType = MessageType.Business)
         {
-            CmdMerge = cmdMerge;
+            CmdInfo = cmdInfo;
             Data = data ?? _emptyByteString;
             MessageType = messageType;
             // 生成消息编号 (只有业务类型 才会有消息编号)
@@ -44,7 +44,7 @@ namespace Pisces.Client.Sdk
         public void Reset()
         {
             MsgId = 0;
-            CmdMerge = 0;
+            CmdInfo = default;
             Data = _emptyByteString;
             MessageType = MessageType.Heartbeat;
         }

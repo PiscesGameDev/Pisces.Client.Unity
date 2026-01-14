@@ -178,7 +178,7 @@ namespace Pisces.Client.Editor
                         var log = _cachedLogs[i];
                         if (_logTypeFilter == 1 && !log.IsOutgoing) continue;
                         if (_logTypeFilter == 2 && log.IsOutgoing) continue;
-                        if (!string.IsNullOrEmpty(_logFilter) && !log.CmdDisplay.Contains(_logFilter)) continue;
+                        if (!string.IsNullOrEmpty(_logFilter) && !log.CmdInfo.ToString().Contains(_logFilter)) continue;
 
                         DrawLogEntry(log, i);
                     }
@@ -221,7 +221,7 @@ namespace Pisces.Client.Editor
 
             // [协议名] 自动扩展
             string cmdColor = log.IsSuccess ? "#dcdcdc" : "#f44747";
-            string cmdStr = $"<color={cmdColor}>{log.CmdDisplay}</color>";
+            string cmdStr = $"<color={cmdColor}>{log.CmdInfo.ToString()}</color>";
             if (log.IsBroadcast) cmdStr += " <color=#4fc1ff>[广播]</color>";
             GUILayout.Label(cmdStr, _logMainStyle, GUILayout.ExpandWidth(true));
 

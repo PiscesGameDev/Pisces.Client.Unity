@@ -1,8 +1,66 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Pisces.Protocol
 {
+    /// <summary>
+    /// 命令信息
+    /// </summary>
+    public readonly struct CmdInfo : IEquatable<CmdInfo>
+    {
+        /// <summary>
+        /// 主命令
+        /// </summary>
+        public readonly int Cmd;
+
+        /// <summary>
+        /// 子命令
+        /// </summary>
+        public readonly int SubCmd;
+
+        /// <summary>
+        /// 合并后的命令
+        /// </summary>
+        public readonly int MergeCmd;
+
+        public CmdInfo(int cmd, int subCmd)
+        {
+            Cmd = cmd;
+            SubCmd = subCmd;
+            MergeCmd = CmdKit.Merge(cmd, subCmd);
+        }
+
+        public CmdInfo(int mergeCmd)
+        {
+            MergeCmd = mergeCmd;
+            Cmd = CmdKit.GetCmd(mergeCmd);
+            SubCmd = CmdKit.GetSubCmd(mergeCmd);
+        }
+
+        public override string ToString() => CmdKit.ToString(this);
+
+        public bool Equals(CmdInfo other) => MergeCmd == other.MergeCmd;
+
+        public override bool Equals(object obj) => obj is CmdInfo other && Equals(other);
+
+        public override int GetHashCode() => MergeCmd;
+
+        public static bool operator ==(CmdInfo left, CmdInfo right) => left.Equals(right);
+
+        public static bool operator !=(CmdInfo left, CmdInfo right) => !left.Equals(right);
+
+        /// <summary>
+        /// 隐式转换为 int
+        /// </summary>
+        public static implicit operator int(CmdInfo cmdInfo) => cmdInfo.MergeCmd;
+
+        /// <summary>
+        /// 隐式转换从 int
+        /// </summary>
+        public static implicit operator CmdInfo(int mergeCmd) => new(mergeCmd);
+    }
+
     /// <summary>
     /// 命令路由工具
     /// </summary>
@@ -59,6 +117,11 @@ namespace Pisces.Protocol
         public static string ToString(int cmd, int subCmd)
         {
             return CurrentFormatter(cmd, subCmd, Merge(cmd, subCmd));
+        }
+
+        public static string ToString(CmdInfo cmdInfo)
+        {
+            return DefaultFormatter(cmdInfo.Cmd, cmdInfo.SubCmd, cmdInfo.MergeCmd);
         }
 
         /// <summary>

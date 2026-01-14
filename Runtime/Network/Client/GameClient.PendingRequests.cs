@@ -17,14 +17,14 @@ namespace Pisces.Client.Network
     {
         public UniTaskCompletionSource<ResponseMessage> Tcs { get; set; }
         public long CreatedTicks { get; set; }
-        public int CmdMerge { get; set; }
+        public CmdInfo CmdInfo { get; set; }
         public int MsgId { get; set; }
 
         public void Reset()
         {
             Tcs = null;
             CreatedTicks = 0;
-            CmdMerge = 0;
+            CmdInfo = default;
             MsgId = 0;
         }
     }
@@ -136,13 +136,13 @@ namespace Pisces.Client.Network
                     {
                         // 以超时异常完成 TCS
                         var timeoutException = new TimeoutException(
-                            $"Request cleanup timeout (MsgId: {removedInfo.MsgId}, Cmd: {CmdKit.ToString(removedInfo.CmdMerge)})"
+                            $"Request cleanup timeout (MsgId: {removedInfo.MsgId}, Cmd: {CmdKit.ToString(removedInfo.CmdInfo)})"
                         );
                         removedInfo.Tcs?.TrySetException(timeoutException);
                         timedOutCount++;
 
                         GameLogger.LogWarning(
-                            $"[GameClient] 强制清理超时请求: MsgId={removedInfo.MsgId}, Cmd={CmdKit.ToString(removedInfo.CmdMerge)}"
+                            $"[GameClient] 强制清理超时请求: MsgId={removedInfo.MsgId}, Cmd={CmdKit.ToString(removedInfo.CmdInfo)}"
                         );
                     }
                 }

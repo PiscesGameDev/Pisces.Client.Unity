@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Pisces.Client.Network.Channel;
 using Pisces.Client.Network;
 using Pisces.Client.Utils;
+using Pisces.Protocol;
 using UnityEngine;
 
 namespace Pisces.Client.Settings
@@ -45,13 +46,15 @@ namespace Pisces.Client.Settings
         }
     }
 
+
+
     /// <summary>
     /// Pisces Client SDK 全局配置
     /// 通过 Project Settings 进行配置
     /// </summary>
     public class PiscesSettings : ScriptableObject
     {
-        
+
         private static PiscesSettings _instance;
 
         /// <summary>
@@ -338,6 +341,34 @@ namespace Pisces.Client.Settings
 
         #endregion
 
+        #region Request Dedup Settings
+
+        [Header("Request Dedup Settings")]
+        [Tooltip("是否启用请求去重")]
+        [SerializeField]
+        private bool _enableRequestDedup = true;
+
+        [Tooltip("去重排除列表（存储 MergeCmd，这些路由不参与去重）")]
+        [SerializeField]
+        private List<int> _dedupExcludeList = new();
+
+        /// <summary>
+        /// 是否启用请求去重
+        /// 启用后，同一路由在等待响应期间不能重复发送
+        /// </summary>
+        public bool EnableRequestDedup
+        {
+            get => _enableRequestDedup;
+            set => _enableRequestDedup = value;
+        }
+
+        /// <summary>
+        /// 去重排除列表（MergeCmd 值）
+        /// </summary>
+        public List<int> DedupExcludeList => _dedupExcludeList;
+
+        #endregion
+
         #region Debug Settings
 
         [Header("Debug Settings")]
@@ -383,8 +414,20 @@ namespace Pisces.Client.Settings
                 EnableRateLimit = _enableRateLimit,
                 MaxSendRate = _maxSendRate,
                 MaxBurstSize = _maxBurstSize,
+                EnableRequestDedup = _enableRequestDedup,
+                DedupExcludeList = BuildDedupExcludeHashSet(),
                 LogLevel = _logLevel
             };
+        }
+
+        /// <summary>
+        /// 构建去重排除 HashSet
+        /// </summary>
+        private HashSet<int> BuildDedupExcludeHashSet()
+        {
+            return _dedupExcludeList != null
+                ? new HashSet<int>(_dedupExcludeList)
+                : new HashSet<int>();
         }
 
         /// <summary>
@@ -417,6 +460,9 @@ namespace Pisces.Client.Settings
             _enableRateLimit = true;
             _maxSendRate = 100;
             _maxBurstSize = 50;
+
+            _enableRequestDedup = true;
+            _dedupExcludeList = new List<int>();
 
             _logLevel = GameLogLevel.Info;
         }

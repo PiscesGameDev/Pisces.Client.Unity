@@ -30,7 +30,7 @@ namespace Pisces.Client.Network
         /// 消息发送失败事件
         /// 参数：CmdMerge, MsgId, 失败原因
         /// </summary>
-        public event Action<int, int, SendResult> OnSendFailed;
+        public event Action<CmdInfo, int, SendResult> OnSendFailed;
 
         /// <summary>
         /// 初始化消息模块
@@ -108,6 +108,12 @@ namespace Pisces.Client.Network
             if (command == null)
                 throw new ArgumentNullException(nameof(command));
 
+            // 请求去重检查
+            if (!TryLockRoute(command.CmdInfo))
+            {
+                throw new InvalidOperationException($"路由已锁定: {command.CmdInfo.ToString()}");
+            }
+
             PendingRequestInfo pendingInfo = null;
 
             // 只有业务消息才需要等待响应
@@ -118,7 +124,7 @@ namespace Pisces.Client.Network
                 {
                     Tcs = tcs,
                     CreatedTicks = Stopwatch.GetTimestamp(),
-                    CmdMerge = command.CmdMerge,
+                    CmdInfo = command.CmdInfo,
                     MsgId = command.MsgId
                 };
 
@@ -161,13 +167,14 @@ namespace Pisces.Client.Network
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
-                throw new TimeoutException(
-                    $"Request timeout after {_options.RequestTimeoutMs}ms (MsgId: {command.MsgId})"
-                );
+                throw new TimeoutException($"Request timeout after {_options.RequestTimeoutMs}ms (MsgId: {command.MsgId})");
             }
             finally
             {
                 _pendingRequests.TryRemove(command.MsgId, out _);
+
+                // 解锁路由
+                UnlockRoute(command.CmdInfo);
 
                 // 归还到对象池
                 ReferencePool<RequestCommand>.Despawn(command);
@@ -197,6 +204,14 @@ namespace Pisces.Client.Network
                 NotifySendFailed(command, SendResult.NotConnected);
                 ReferencePool<RequestCommand>.Despawn(command);
                 return SendResult.NotConnected;
+            }
+
+            // 请求去重检查
+            if (!TryLockRoute(command.CmdInfo))
+            {
+                NotifySendFailed(command, SendResult.RequestLocked);
+                ReferencePool<RequestCommand>.Despawn(command);
+                return SendResult.RequestLocked;
             }
 
             try
@@ -243,19 +258,16 @@ namespace Pisces.Client.Network
         /// </summary>
         private void NotifySendFailed(RequestCommand command, SendResult result)
         {
-            GameLogger.LogWarning(
-                $"[GameClient] 发送失败: {CmdKit.ToString(command.CmdMerge)}, MsgId={command.MsgId}, 原因={result}"
-            );
-
+            GameLogger.LogWarning($"[GameClient] 发送失败: {command.CmdInfo.ToString()}, MsgId={command.MsgId}, 原因={result}");
             _statistics.RecordSendFailed();
-            OnSendFailed?.Invoke(command.CmdMerge, command.MsgId, result);
+            OnSendFailed?.Invoke(command.CmdInfo, command.MsgId, result);
         }
 
         private ExternalMessage CreateExternalMessage(RequestCommand command)
         {
             var message = ReferencePool<ExternalMessage>.Spawn();
             message.MessageType = command.MessageType;
-            message.CmdMerge = command.CmdMerge;
+            message.CmdMerge = command.CmdInfo;
             message.MsgId = command.MsgId;
             message.Data = command.Data;
             return message;
@@ -319,6 +331,9 @@ namespace Pisces.Client.Network
             // 创建响应消息
             var response = ReferencePool<ResponseMessage>.Spawn();
             response.Initialize(message);
+
+            // 解锁路由（收到响应后解锁）
+            UnlockRoute(message.CmdMerge);
 
             // 尝试匹配等待的请求
             if (_pendingRequests.TryRemove(message.MsgId, out var pendingInfo))

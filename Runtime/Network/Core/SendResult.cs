@@ -33,6 +33,11 @@ namespace Pisces.Client.Network.Core
         /// <summary>
         /// 通道发送失败
         /// </summary>
-        ChannelError
+        ChannelError,
+
+        /// <summary>
+        /// 请求已锁定（重复请求）
+        /// </summary>
+        RequestLocked
     }
 }

@@ -13,13 +13,13 @@ namespace Pisces.Client.Sdk
         private ExternalMessage _message;
 
         // 反序列化缓存，避免重复解析同一响应
-        private object _cachedValue;
+        private IMessage _cachedValue;
         private Type _cachedType;
 
         /// <summary>
         /// 获取合并后的命令码。如果消息为空则返回 0。
         /// </summary>
-        public int CmdMerge => _message?.CmdMerge ?? 0;
+        public CmdInfo CmdInfo { get; private set; }
 
         /// <summary>
         /// 获取消息 ID。如果消息为空则返回 0。
@@ -60,7 +60,8 @@ namespace Pisces.Client.Sdk
         {
             _message = message;
             MessageType = _message.MessageType;
-            ResponseStatus = _message?.ResponseStatus ?? 0;
+            CmdInfo = message.CmdMerge;
+            ResponseStatus = _message.ResponseStatus;
             HasError = ResponseStatus != 0;
             Success = ResponseStatus == 0;
         }
@@ -71,6 +72,7 @@ namespace Pisces.Client.Sdk
         public void Reset()
         {
             _message = null;
+            CmdInfo = default;
             MessageType = MessageType.Heartbeat;
             ResponseStatus = 0;
             HasError = false;
