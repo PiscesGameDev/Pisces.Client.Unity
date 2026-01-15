@@ -23,6 +23,12 @@ namespace Pisces.Client.Sdk
         /// </summary>
         public bool HasOperationContext => CmdInfo.HasValue;
 
+
+        public PiscesException(string message, Exception inner = null): base(message,inner)
+        {
+
+        }
+
         protected PiscesException(string message, CmdInfo? cmdInfo = null, int msgId = 0, Exception inner = null) : base(message, inner)
         {
             CmdInfo = cmdInfo;

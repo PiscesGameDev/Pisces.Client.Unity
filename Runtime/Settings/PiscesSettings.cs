@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Pisces.Client.Network.Channel;
 using Pisces.Client.Network;
 using Pisces.Client.Utils;
-using Pisces.Protocol;
 using UnityEngine;
 
 namespace Pisces.Client.Settings
