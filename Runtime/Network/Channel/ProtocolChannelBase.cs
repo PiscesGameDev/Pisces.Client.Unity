@@ -249,7 +249,7 @@ namespace Pisces.Client.Network.Channel
             catch (Exception)
             {
                 _isConnected = false;
-                throw;
+                throw ;
             }
         }
 

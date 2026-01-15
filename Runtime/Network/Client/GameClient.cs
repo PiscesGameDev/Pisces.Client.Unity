@@ -150,7 +150,6 @@ namespace Pisces.Client.Network
                 CleanupChannel(newChannel);
 
                 _stateMachine.TryTransition(ConnectionState.Disconnected, out _);
-                GameLogger.LogError($"[GameClient] 连接失败: {ex.Message}");
                 OnError?.Invoke(ex);
                 PiscesClientCode.ConnectionFailed.ThrowIfFailed(null,ex);
             }
